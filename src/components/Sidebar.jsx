@@ -10,20 +10,47 @@ import {
   Settings,
   ShieldCheck,
   Target,
-  UserRound,
 } from "lucide-react";
 
 import Logo from "./Logo";
 
 function Sidebar({ navigate, active = "dashboard" }) {
   const menuItems = [
-    { label: "Dashboard", icon: LayoutDashboard, screen: "dashboard" },
-    { label: "Workout Plans", icon: Dumbbell, screen: "workout-plans" },
-    { label: "Exercise Library", icon: BookOpen, screen: "exercise-library" },
-    { label: "Exercise Details", icon: BookOpen, screen: "exercise-details" },
-    { label: "Workout Tracking", icon: Activity, screen: "workout-tracking" },
-    { label: "Analytics", icon: BarChart3, screen: "analytics" },
-    { label: "Goals", icon: Target, screen: "goals" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      screen: "dashboard",
+    },
+    {
+      label: "Workout Plans",
+      icon: Dumbbell,
+      screen: "workout-plans",
+    },
+    {
+      label: "Exercise Library",
+      icon: BookOpen,
+      screen: "exercise-library",
+    },
+    {
+      label: "Exercise Details",
+      icon: BookOpen,
+      screen: "exercise-details",
+    },
+    {
+      label: "Workout Tracking",
+      icon: Activity,
+      screen: "workout-tracking",
+    },
+    {
+      label: "Analytics",
+      icon: BarChart3,
+      screen: "analytics",
+    },
+    {
+      label: "Goals",
+      icon: Target,
+      screen: "goals",
+    },
     {
       label: "Calorie & Activity Tracking",
       icon: ShieldCheck,
@@ -59,10 +86,12 @@ function Sidebar({ navigate, active = "dashboard" }) {
 
   return (
     <aside className="sidebar">
+      {/* LOGO */}
       <div className="sidebar-logo">
         <Logo />
       </div>
 
+      {/* NAVIGATION */}
       <nav className="sidebar-nav">
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -89,6 +118,7 @@ function Sidebar({ navigate, active = "dashboard" }) {
         })}
       </nav>
 
+      {/* PROFILE */}
       <button
         className={`sidebar-user ${
           active === "profile" ? "profile-active" : ""
@@ -96,7 +126,10 @@ function Sidebar({ navigate, active = "dashboard" }) {
         onClick={() => navigate("profile")}
       >
         <div className="user-avatar">
-          <UserRound size={16} />
+          <img
+            src="/images/profile.jpg"
+            alt="Karthik"
+          />
         </div>
 
         <div className="user-details">

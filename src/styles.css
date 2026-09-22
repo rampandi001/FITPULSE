@@ -13622,3 +13622,73 @@ button {
     display: none;
   }
 }
+/* =========================================================
+   PROFILE PHOTO
+========================================================= */
+
+.profile-avatar {
+  width: 76px !important;
+  height: 76px !important;
+
+  flex-shrink: 0;
+
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid var(--lime) !important;
+  border-radius: 50% !important;
+
+  background: #15171e;
+
+  box-shadow: 0 0 0 4px rgba(200, 255, 0, 0.06);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+  object-position: center;
+
+  border-radius: 50%;
+}
+/* =========================================================
+   SIDEBAR PROFILE PHOTO
+========================================================= */
+
+.sidebar-user .user-avatar {
+  width: 34px !important;
+  height: 34px !important;
+
+  flex-shrink: 0;
+
+  overflow: hidden;
+
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 !important;
+
+  border: 1px solid #8ca900 !important;
+  border-radius: 50% !important;
+
+  background: #15171e !important;
+}
+
+.sidebar-user .user-avatar img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+  object-position: center;
+
+  border-radius: 50%;
+}

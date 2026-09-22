@@ -13692,3 +13692,106 @@ button {
 
   border-radius: 50%;
 }
+/* =========================================================
+   LANDING HERO BUTTON FIX
+========================================================= */
+
+.hero-buttons {
+  position: relative;
+  z-index: 20;
+
+  display: flex !important;
+  align-items: center !important;
+
+  gap: 14px !important;
+
+  margin-top: 28px !important;
+}
+
+.tracking-button,
+.demo-button {
+  height: 48px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  box-sizing: border-box !important;
+
+  white-space: nowrap !important;
+
+  flex-shrink: 0 !important;
+
+  font-size: 10px !important;
+  font-weight: 900 !important;
+
+  letter-spacing: 0.5px !important;
+}
+
+.tracking-button {
+  width: 160px !important;
+
+  gap: 12px !important;
+
+  padding: 0 15px !important;
+}
+
+.demo-button {
+  width: 142px !important;
+
+  gap: 9px !important;
+
+  padding: 0 13px !important;
+}
+
+.tracking-button span,
+.demo-button span {
+  white-space: nowrap !important;
+}
+
+
+/* =========================================================
+   LANDING NAV COMMUNITY
+========================================================= */
+
+.landing-navigation .nav-link {
+  position: relative;
+  z-index: 30;
+
+  cursor: pointer !important;
+
+  pointer-events: auto !important;
+}
+
+
+/* =========================================================
+   LANDING NAVBAR
+========================================================= */
+
+.landing-navbar {
+  position: relative;
+  z-index: 100;
+
+  pointer-events: auto !important;
+}
+
+.landing-navbar button {
+  pointer-events: auto !important;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+  .hero-buttons {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .tracking-button,
+  .demo-button {
+    width: 170px !important;
+  }
+}

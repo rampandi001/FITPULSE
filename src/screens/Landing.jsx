@@ -53,6 +53,7 @@ function Landing({ navigate }) {
           </button>
 
           <button
+            type="button"
             className="nav-link"
             onClick={() => navigate("community")}
           >
@@ -110,8 +111,8 @@ function Landing({ navigate }) {
                 className="tracking-button"
                 onClick={() => navigate("register")}
               >
-                START TRACKING NOW
-                <ArrowRight size={18} />
+                <span>START TRACKING NOW</span>
+                <ArrowRight size={17} />
               </button>
 
               <button
@@ -119,8 +120,8 @@ function Landing({ navigate }) {
                 className="demo-button"
                 onClick={() => setShowTechDemo(true)}
               >
-                <Play size={15} fill="currentColor" />
-                WATCH TECH DEMO
+                <Play size={14} fill="currentColor" />
+                <span>WATCH TECH DEMO</span>
               </button>
             </div>
           </div>

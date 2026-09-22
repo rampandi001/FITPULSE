@@ -3,11 +3,11 @@ import { useState } from "react";
 import Landing from "./screens/Landing";
 import SignIn from "./screens/SignIn";
 import Register from "./screens/Register";
+import Community from "./screens/Community";
 
 import Dashboard from "./screens/Dashboard";
 import WorkoutPlans from "./screens/WorkoutPlans";
 import Features from "./screens/Features";
-import Community from "./screens/Community";
 import ExerciseLibrary from "./screens/ExerciseLibrary";
 import PlanDetails from "./screens/PlanDetails";
 import ExerciseDetails from "./screens/ExerciseDetails";

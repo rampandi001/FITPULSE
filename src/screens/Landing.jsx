@@ -8,19 +8,24 @@ import {
   X,
 } from "lucide-react";
 
-import Logo from "../components/Logo";
-
 function Landing({ navigate }) {
   const [showTechDemo, setShowTechDemo] = useState(false);
 
   return (
     <div className="fitpulse-landing">
+
+      {/* ================= NAVBAR ================= */}
       <header className="landing-navbar">
         <button
           className="landing-brand"
           onClick={() => navigate("landing")}
         >
-          <Logo />
+          <img
+            src="/images/fitpulse-logo.png"
+            alt="FITPULSE"
+            className="landing-logo-image"
+          />
+          <span>FITPULSE</span>
         </button>
 
         <nav className="landing-navigation">
@@ -53,7 +58,6 @@ function Landing({ navigate }) {
           </button>
 
           <button
-            type="button"
             className="nav-link"
             onClick={() => navigate("community")}
           >
@@ -80,22 +84,27 @@ function Landing({ navigate }) {
         </div>
       </header>
 
+      {/* ================= HERO ================= */}
       <section className="landing-hero">
+
         <div className="hero-background" />
         <div className="hero-overlay" />
 
         <div className="hero-content">
+
+          {/* LEFT CONTENT */}
           <div className="hero-left">
+
             <div className="release-badge">
               NEW RELEASE: V2.0
             </div>
 
-            <h1>
-              CRUSH YOUR
-              <br />
-              GOALS WITH <span>PULSE</span>
-              <br />
-              <span>ENERGY</span>
+            <h1 className="hero-title">
+              <span>CRUSH YOUR</span>
+              <span>GOALS WITH</span>
+              <span className="lime-text">
+                PULSE ENERGY
+              </span>
             </h1>
 
             <p className="hero-description">
@@ -106,12 +115,13 @@ function Landing({ navigate }) {
             </p>
 
             <div className="hero-buttons">
+
               <button
                 type="button"
                 className="tracking-button"
                 onClick={() => navigate("register")}
               >
-                <span>START TRACKING NOW</span>
+                START TRACKING NOW
                 <ArrowRight size={17} />
               </button>
 
@@ -121,42 +131,68 @@ function Landing({ navigate }) {
                 onClick={() => setShowTechDemo(true)}
               >
                 <Play size={14} fill="currentColor" />
-                <span>WATCH TECH DEMO</span>
+                WATCH TECH DEMO
               </button>
+
             </div>
           </div>
 
+          {/* RIGHT PHONE */}
           <div className="hero-right">
+
             <div className="phone-card">
+
+              <div className="phone-card-top">
+                <span>FITPULSE PERFORMANCE</span>
+                <strong>V2.0</strong>
+              </div>
+
               <img
                 src="/images/workout-phone.jpg"
                 alt="FITPULSE Workout App"
                 className="workout-phone-image"
               />
+
             </div>
+
           </div>
         </div>
 
+        {/* ================= BOTTOM FEATURES ================= */}
         <div className="hero-bottom">
+
           <div className="hero-bottom-item">
             <Dumbbell size={15} />
-            <span>SMART TRAINING</span>
+            <div>
+              <strong>SMART TRAINING</strong>
+              <span>Adaptive workout programs</span>
+            </div>
           </div>
 
           <div className="hero-bottom-line" />
 
           <div className="hero-bottom-item">
-            <span>REAL-TIME METRICS</span>
+            <Activity size={15} />
+            <div>
+              <strong>REAL-TIME METRICS</strong>
+              <span>Track every performance signal</span>
+            </div>
           </div>
 
           <div className="hero-bottom-line" />
 
           <div className="hero-bottom-item">
-            <span>PERFORMANCE ANALYTICS</span>
+            <Activity size={15} />
+            <div>
+              <strong>PERFORMANCE ANALYTICS</strong>
+              <span>Understand your progress</span>
+            </div>
           </div>
+
         </div>
       </section>
 
+      {/* ================= TECH DEMO MODAL ================= */}
       {showTechDemo && (
         <div
           className="tech-demo-overlay"
@@ -166,6 +202,7 @@ function Landing({ navigate }) {
             className="tech-demo-modal"
             onClick={(e) => e.stopPropagation()}
           >
+
             <button
               className="tech-demo-close"
               onClick={() => setShowTechDemo(false)}
@@ -175,6 +212,7 @@ function Landing({ navigate }) {
             </button>
 
             <div className="tech-demo-video-container">
+
               <video
                 src="/videos/fitpulse-tech-demo.mp4"
                 controls
@@ -184,9 +222,11 @@ function Landing({ navigate }) {
               >
                 Your browser does not support video playback.
               </video>
+
             </div>
 
             <div className="tech-demo-info">
+
               <div>
                 <p>FITPULSE V2.0</p>
 
@@ -212,10 +252,12 @@ function Landing({ navigate }) {
                 START TRACKING
                 <ArrowRight size={15} />
               </button>
+
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

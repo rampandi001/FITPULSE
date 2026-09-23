@@ -1,72 +1,52 @@
-import Logo from "./Logo";
+import { Activity } from "lucide-react";
 
 function PublicNav({ navigate, active = "landing" }) {
+  const navItems = [
+    { label: "Overview", screen: "landing", key: "landing" },
+    { label: "Features", screen: "features", key: "features" },
+    { label: "Workout Plans", screen: "workout-plans", key: "workout-plans" },
+    { label: "Pricing", screen: "pricing", key: "pricing" },
+    { label: "Community", screen: "community", key: "community" },
+  ];
+
   return (
     <header className="public-navbar">
       <button
         className="public-brand"
         onClick={() => navigate("landing")}
       >
-        <Logo />
+        <img
+          src="/images/fitpulse-logo.png"
+          alt="FITPULSE"
+          className="public-brand-logo"
+        />
+        <span>FITPULSE</span>
       </button>
 
-      <nav className="public-navigation">
-        <button
-          className={`public-nav-link ${
-            active === "landing" ? "active" : ""
-          }`}
-          onClick={() => navigate("landing")}
-        >
-          Overview
-        </button>
-
-        <button
-          className={`public-nav-link ${
-            active === "features" ? "active" : ""
-          }`}
-          onClick={() => navigate("features")}
-        >
-          Features
-        </button>
-
-        <button
-          className={`public-nav-link ${
-            active === "workout-plans" ? "active" : ""
-          }`}
-          onClick={() => navigate("workout-plans")}
-        >
-          Workout Plans
-        </button>
-
-        <button
-          className={`public-nav-link ${
-            active === "pricing" ? "active" : ""
-          }`}
-          onClick={() => navigate("pricing")}
-        >
-          Pricing
-        </button>
-
-        <button
-          className={`public-nav-link ${
-            active === "community" ? "active" : ""
-          }`}
-          onClick={() => navigate("community")}
-        >
-          Community
-        </button>
+      <nav className="public-nav-links">
+        {navItems.map((item) => (
+          <button
+            key={item.key}
+            className={`public-nav-link ${
+              active === item.key ? "active" : ""
+            }`}
+            onClick={() => navigate(item.screen)}
+          >
+            {item.label}
+          </button>
+        ))}
       </nav>
 
       <div className="public-nav-actions">
         <button
-          className="public-login-button"
+          className="public-login"
           onClick={() => navigate("signin")}
         >
           Login
         </button>
 
         <button
-          className="public-join-button"
+          className="public-join"
           onClick={() => navigate("register")}
         >
           JOIN FREE

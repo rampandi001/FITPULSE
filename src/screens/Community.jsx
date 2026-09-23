@@ -1,114 +1,92 @@
 import {
   Activity,
   ArrowRight,
-  Award,
-  Dumbbell,
-  Flame,
-  HeartPulse,
-  MessageCircle,
-  Trophy,
   Users,
+  Zap,
 } from "lucide-react";
 
 function Community({ navigate }) {
   const members = [
     {
-      name: "ARJUN",
-      level: "ATHLETE LVL 18",
-      score: "9,842",
+      initials: "AK",
+      name: "Arjun K.",
+      workout: "Upper Push Power",
     },
     {
-      name: "PRIYA",
-      level: "ATHLETE LVL 16",
-      score: "8,924",
+      initials: "SR",
+      name: "Sarah R.",
+      workout: "Strength Session",
     },
     {
-      name: "VIKRAM",
-      level: "ATHLETE LVL 14",
-      score: "8,642",
-    },
-    {
-      name: "ANANYA",
-      level: "ATHLETE LVL 12",
-      score: "7,986",
-    },
-  ];
-
-  const posts = [
-    {
-      name: "ARJUN",
-      time: "12 MIN AGO",
-      text: "Just completed my highest-load push session. New personal best today.",
-      likes: "42",
-      comments: "8",
-      icon: Dumbbell,
-    },
-    {
-      name: "PRIYA",
-      time: "1 HR AGO",
-      text: "30 day training streak completed. Consistency is finally becoming a habit.",
-      likes: "67",
-      comments: "12",
-      icon: Flame,
-    },
-    {
-      name: "VIKRAM",
-      time: "3 HRS AGO",
-      text: "Recovery score is looking great today. Ready for another heavy session.",
-      likes: "31",
-      comments: "5",
-      icon: HeartPulse,
+      initials: "VK",
+      name: "Vikram K.",
+      workout: "Leg Performance",
     },
   ];
 
   return (
-    <div className="community-page">
-
+    <div className="public-page community-page">
       {/* NAVBAR */}
-      <header className="community-navbar">
+      <header className="public-navbar">
         <button
-          className="community-brand"
+          className="public-brand"
           onClick={() => navigate("landing")}
         >
-          <div className="community-brand-icon">
-            <Activity size={17} strokeWidth={3} />
-          </div>
-
+          <img
+            src="/images/fitpulse-logo.png"
+            alt="FITPULSE"
+            className="public-brand-logo"
+          />
           <span>FITPULSE</span>
         </button>
 
-        <nav className="community-nav">
-          <button onClick={() => navigate("landing")}>
-            OVERVIEW
+        <nav className="public-nav">
+          <button
+            className="public-nav-link"
+            onClick={() => navigate("landing")}
+          >
+            Overview
           </button>
 
-          <button onClick={() => navigate("features")}>
-            FEATURES
+          <button
+            className="public-nav-link"
+            onClick={() => navigate("features")}
+          >
+            Features
           </button>
 
-          <button onClick={() => navigate("workout-plans")}>
-            WORKOUT PLANS
+          <button
+            className="public-nav-link"
+            onClick={() => navigate("workout-plans")}
+          >
+            Workout Plans
           </button>
 
-          <button onClick={() => navigate("pricing")}>
-            PRICING
+          <button
+            className="public-nav-link"
+            onClick={() => navigate("pricing")}
+          >
+            Pricing
           </button>
 
-          <button className="active">
-            COMMUNITY
+          <button
+            className="public-nav-link active"
+            onClick={() => navigate("community")}
+          >
+            Community
           </button>
         </nav>
 
-        <div className="community-actions">
+        <div className="public-nav-actions">
           <button
-            className="community-login"
+            className="public-login"
             onClick={() => navigate("signin")}
           >
-            LOGIN
+            Login
           </button>
 
           <button
-            className="community-join"
+            className="public-join"
             onClick={() => navigate("register")}
           >
             JOIN FREE
@@ -116,239 +94,137 @@ function Community({ navigate }) {
         </div>
       </header>
 
-      {/* HERO */}
-      <main>
-
+      {/* COMMUNITY HERO */}
+      <main className="community-main">
         <section className="community-hero">
 
-          <div className="community-hero-grid" />
+          <div className="community-copy">
 
-          <div className="community-hero-content">
+            <div className="community-top-label">
+              <span className="community-back-arrow">←</span>
+              <span>PERFORMANCE COMMUNITY</span>
 
-            <div className="community-label">
-              <Users size={13} />
-              FITPULSE ATHLETE NETWORK
+              <div className="community-powered">
+                <Users size={13} />
+                BUILT FOR ATHLETES
+              </div>
             </div>
 
             <h1>
               TRAIN
+              <span> TOGETHER.</span>
               <br />
-              <span>TOGETHER.</span>
+              PERFORM
+              <br />
+              BETTER.
             </h1>
 
             <p>
-              Connect with athletes, share progress, discover challenges
-              and push your performance beyond limits.
+              Connect with athletes, share your progress,
+              discover training routines and stay accountable
+              through the FITPULSE community.
             </p>
 
-            <button
-              className="community-hero-button"
-              onClick={() => navigate("register")}
-            >
-              JOIN THE COMMUNITY
-              <ArrowRight size={16} />
-            </button>
-
-          </div>
-
-          <div className="community-hero-stats">
-
-            <div>
-              <strong>12.8K</strong>
-              <span>ACTIVE ATHLETES</span>
-            </div>
-
-            <div>
-              <strong>48K+</strong>
-              <span>WORKOUTS SHARED</span>
-            </div>
-
-            <div>
-              <strong>2.4K</strong>
-              <span>DAILY CHALLENGES</span>
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* COMMUNITY CONTENT */}
-        <section className="community-content">
-
-          {/* FEED */}
-          <div className="community-feed">
-
-            <div className="community-section-heading">
-
-              <div>
-                <p>ATHLETE NETWORK</p>
-                <h2>COMMUNITY FEED</h2>
-              </div>
-
-              <button className="community-sort">
-                LATEST
+            <div className="community-actions">
+              <button
+                className="community-primary-btn"
+                onClick={() => navigate("register")}
+              >
+                JOIN COMMUNITY
+                <ArrowRight size={17} />
               </button>
 
-            </div>
-
-            <div className="community-post-list">
-
-              {posts.map((post, index) => {
-
-                const Icon = post.icon;
-
-                return (
-                  <article
-                    className="community-post"
-                    key={index}
-                  >
-
-                    <div className="post-header">
-
-                      <div className="post-avatar">
-                        {post.name.charAt(0)}
-                      </div>
-
-                      <div className="post-user">
-                        <strong>{post.name}</strong>
-                        <span>{post.time}</span>
-                      </div>
-
-                      <Icon size={17} />
-
-                    </div>
-
-                    <p className="post-text">
-                      {post.text}
-                    </p>
-
-                    <div className="post-actions">
-
-                      <button>
-                        <HeartPulse size={15} />
-                        {post.likes}
-                      </button>
-
-                      <button>
-                        <MessageCircle size={15} />
-                        {post.comments}
-                      </button>
-
-                      <button className="post-share">
-                        SHARE
-                      </button>
-
-                    </div>
-
-                  </article>
-                );
-              })}
-
+              <button
+                className="community-secondary-btn"
+                onClick={() => navigate("workout-plans")}
+              >
+                EXPLORE WORKOUTS
+              </button>
             </div>
 
           </div>
 
-          {/* LEADERBOARD */}
-          <aside className="community-sidebar">
+          {/* ACTIVE COMMUNITY CARD */}
+          <div className="community-live-card">
 
-            <div className="community-section-heading">
-
+            <div className="community-card-header">
               <div>
-                <p>PERFORMANCE RANKING</p>
-                <h2>TOP ATHLETES</h2>
+                <span className="live-label">
+                  LIVE COMMUNITY
+                </span>
+
+                <h2>ACTIVE NOW</h2>
               </div>
 
-              <Trophy size={18} />
-
+              <span className="live-dot"></span>
             </div>
 
-            <div className="leaderboard">
-
-              {members.map((member, index) => (
-
+            <div className="community-members">
+              {members.map((member) => (
                 <div
-                  className="leaderboard-item"
+                  className="community-member"
                   key={member.name}
                 >
-
-                  <div className="leaderboard-rank">
-                    0{index + 1}
+                  <div className="member-avatar">
+                    {member.initials}
                   </div>
 
-                  <div className="leaderboard-avatar">
-                    {member.name.charAt(0)}
-                  </div>
-
-                  <div className="leaderboard-user">
+                  <div className="member-info">
                     <strong>{member.name}</strong>
-                    <span>{member.level}</span>
+                    <span>{member.workout}</span>
                   </div>
 
-                  <strong className="leaderboard-score">
-                    {member.score}
-                  </strong>
-
+                  <b>LIVE</b>
                 </div>
-
               ))}
-
             </div>
 
-            <button className="leaderboard-button">
-              VIEW FULL RANKING
-              <ArrowRight size={14} />
-            </button>
+            <div className="community-live-footer">
+              <Activity size={17} />
+              <span>
+                1,284 ATHLETES TRAINING NOW
+              </span>
+            </div>
 
-          </aside>
+          </div>
 
         </section>
 
-        {/* CHALLENGE */}
-        <section className="community-challenge">
+        {/* BOTTOM STATS */}
+        <section className="community-stats">
 
-          <div className="challenge-icon">
-            <Award size={25} />
-          </div>
-
-          <div className="challenge-content">
-            <p>ACTIVE COMMUNITY CHALLENGE</p>
-
-            <h2>
-              30 DAY PERFORMANCE STREAK
-            </h2>
-
-            <span>
-              Complete at least one workout every day for 30
-              consecutive days.
-            </span>
-          </div>
-
-          <div className="challenge-progress">
-
-            <strong>72%</strong>
-
+          <div className="community-stat">
+            <div className="stat-icon">
+              <Users size={17} />
+            </div>
             <div>
-              <span />
+              <strong>12K+</strong>
+              <span>ACTIVE ATHLETES</span>
             </div>
-
-            <small>
-              8,642 ATHLETES PARTICIPATING
-            </small>
-
           </div>
 
-          <button
-            className="challenge-button"
-            onClick={() => navigate("register")}
-          >
-            JOIN CHALLENGE
-            <ArrowRight size={15} />
-          </button>
+          <div className="community-stat">
+            <div className="stat-icon">
+              <Zap size={17} />
+            </div>
+            <div>
+              <strong>24/7</strong>
+              <span>COMMUNITY ACTIVITY</span>
+            </div>
+          </div>
+
+          <div className="community-stat">
+            <div className="stat-icon">
+              <Activity size={17} />
+            </div>
+            <div>
+              <strong>8.4K</strong>
+              <span>WORKOUTS SHARED</span>
+            </div>
+          </div>
 
         </section>
-
       </main>
-
     </div>
   );
 }

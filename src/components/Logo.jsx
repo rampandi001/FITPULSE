@@ -1,13 +1,11 @@
-function Logo({ className = "" }) {
+function Logo() {
   return (
-    <div className={`fitpulse-logo-wrapper ${className}`}>
+    <div className="fitpulse-logo">
       <img
         src="/images/fitpulse-logo.png"
         alt="FITPULSE"
-        className="fitpulse-logo"
       />
-
-      <span className="fitpulse-logo-name">FITPULSE</span>
+      <span>FITPULSE</span>
     </div>
   );
 }

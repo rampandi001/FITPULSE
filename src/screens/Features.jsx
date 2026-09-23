@@ -10,6 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 
+
 function Features({ navigate }) {
   const features = [
     {

@@ -20162,3 +20162,2645 @@ button {
     white-space: normal;
   }
 }
+/* =========================================================
+   PROFILE PAGE
+========================================================= */
+
+.profile-main {
+  margin-left: 240px;
+  width: calc(100% - 240px);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 28px 34px 50px;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 38px;
+}
+
+.profile-back-button,
+.profile-edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #171921;
+  color: #f5f5f5;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.profile-back-button:hover,
+.profile-edit-button:hover {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
+.profile-title-section {
+  margin-bottom: 28px;
+}
+
+.profile-title-section p {
+  margin: 0 0 5px;
+  color: var(--lime);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.profile-title-section h1 {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: -1px;
+  font-weight: 900;
+}
+
+.profile-title-section h1 span {
+  color: var(--lime);
+}
+
+.profile-title-section > span {
+  display: block;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Messages */
+
+.profile-success,
+.profile-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.profile-success {
+  border: 1px solid rgba(200, 255, 0, 0.3);
+  background: rgba(200, 255, 0, 0.08);
+  color: var(--lime);
+}
+
+.profile-error {
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  background: rgba(255, 80, 80, 0.08);
+  color: #ff8585;
+}
+
+/* Main grid */
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.profile-card {
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+}
+
+/* Main profile card */
+
+.profile-main-card {
+  grid-row: span 2;
+  min-height: 410px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-avatar-large {
+  position: relative;
+  width: 105px;
+  height: 105px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  border: 1px solid #3b3e49;
+  border-radius: 50%;
+  background: #101116;
+  color: var(--lime);
+  overflow: hidden;
+}
+
+.profile-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-camera-button {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 31px;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--card);
+  border-radius: 50%;
+  background: var(--lime);
+  color: #111;
+  cursor: pointer;
+}
+
+.profile-main-card h2 {
+  margin: 0;
+  color: white;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.profile-email {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile-level {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-level span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.profile-level strong {
+  color: var(--lime);
+  font-size: 26px;
+}
+
+/* Card headings */
+
+.profile-card-heading {
+  margin-bottom: 22px;
+}
+
+.profile-card-heading p {
+  margin: 0 0 5px;
+  color: var(--lime);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.profile-card-heading h2 {
+  margin: 0;
+  color: white;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+
+/* Forms */
+
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.profile-form-grid label {
+  display: block;
+  min-width: 0;
+}
+
+.profile-form-grid label > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #858995;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.profile-form-grid input {
+  width: 100%;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  outline: none;
+  background: #101116;
+  color: white;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.profile-form-grid input:focus {
+  border-color: var(--lime);
+}
+
+.profile-form-grid input:disabled {
+  opacity: 1;
+  color: #858995;
+  cursor: default;
+}
+
+.profile-input-unit {
+  position: relative;
+}
+
+.profile-input-unit input {
+  padding-right: 45px;
+}
+
+.profile-input-unit small {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: var(--lime);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.profile-full-width {
+  grid-column: 1 / -1;
+}
+
+/* Save */
+
+.profile-save-area {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.profile-save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 160px;
+  height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 5px;
+  background: var(--lime);
+  color: #111;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.7px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.profile-save-button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.profile-save-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading */
+
+.profile-loading {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* Responsive */
+
+@media (max-width: 1000px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-main-card {
+    grid-row: auto;
+    min-height: auto;
+  }
+
+  .profile-level {
+    margin-top: 22px;
+  }
+}
+
+@media (max-width: 700px) {
+  .profile-main {
+    margin-left: 0;
+    width: 100%;
+    padding: 22px 18px 40px;
+  }
+
+  .profile-title-section h1 {
+    font-size: 29px;
+  }
+
+  .profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-full-width {
+    grid-column: auto;
+  }
+
+  .profile-header {
+    margin-bottom: 28px;
+  }
+}
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #3b3e49;
+  border-radius: 50%;
+  background: #101116;
+  color: var(--lime);
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #3b3e49;
+  border-radius: 50%;
+  background: #101116;
+  color: var(--lime);
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+/* =========================================
+   FITPULSE SIDEBAR LOGO
+========================================= */
+
+.sidebar-logo {
+  width: 100%;
+  height: 72px;
+  padding: 0 20px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  flex-shrink: 0;
+
+  color: #ffffff;
+  background: #171921;
+
+  box-sizing: border-box;
+}
+
+.sidebar-logo-mark {
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  color: #101116;
+  background: #c8ff00;
+
+  border-radius: 8px;
+
+  box-shadow: 0 0 14px rgba(200, 255, 0, 0.18);
+}
+
+.sidebar-logo-text {
+  display: block;
+
+  color: #ffffff;
+
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+
+  letter-spacing: 1.4px;
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   SIDEBAR STRUCTURE
+========================================= */
+
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  box-sizing: border-box;
+
+  background: #171921;
+  border-right: 1px solid #292c38;
+
+  overflow: hidden;
+}
+
+
+/* =========================================
+   SIDEBAR NAVIGATION
+========================================= */
+
+.sidebar-nav {
+  flex: 1;
+
+  min-height: 0;
+
+  padding: 18px 14px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  box-sizing: border-box;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: #343744;
+  border-radius: 10px;
+}
+
+
+/* =========================================
+   SIDEBAR ITEMS
+========================================= */
+
+.sidebar-item {
+  width: 100%;
+  min-height: 40px;
+
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  position: relative;
+
+  border: 1px solid transparent;
+  border-radius: 6px;
+
+  background: transparent;
+  color: #b9bcc8;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.sidebar-item:hover {
+  color: #ffffff;
+  background: #1d2029;
+}
+
+.sidebar-item.active {
+  color: #c8ff00;
+  background: #1e2419;
+  border-color: #c8ff00;
+}
+
+.sidebar-item svg {
+  flex-shrink: 0;
+}
+
+
+/* =========================================
+   NOTIFICATION BADGE
+========================================= */
+
+.notification-badge {
+  margin-left: auto;
+
+  min-width: 18px;
+  height: 18px;
+
+  padding: 0 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ff4d68;
+  color: #ffffff;
+
+  border-radius: 5px;
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+
+/* =========================================
+   SIDEBAR USER
+========================================= */
+
+.sidebar-user {
+  width: 100%;
+  min-height: 64px;
+
+  padding: 10px 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  flex-shrink: 0;
+
+  border: 0;
+  border-top: 1px solid #292c38;
+
+  background: #171921;
+  color: #ffffff;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.sidebar-user:hover {
+  background: #1d2029;
+}
+
+.sidebar-user.profile-active {
+  background: #1d2029;
+}
+
+
+/* =========================================
+   USER AVATAR
+========================================= */
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  border: 1px solid #3b3e49;
+  border-radius: 50%;
+
+  background: #101116;
+  color: #c8ff00;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+
+/* =========================================
+   USER DETAILS
+========================================= */
+
+.user-details {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.user-details strong {
+  overflow: hidden;
+
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-details span {
+  color: #c8ff00;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+/* =========================================================
+   WORKOUT TRACKING
+   ========================================================= */
+
+.workout-tracking-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  padding: 28px 34px 40px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.workout-tracking-main::-webkit-scrollbar {
+  width: 6px;
+}
+
+.workout-tracking-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.workout-tracking-main::-webkit-scrollbar-thumb {
+  background: #30333e;
+  border-radius: 10px;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.workout-tracking-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.workout-back-button {
+  min-height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #15171f;
+  color: #aeb1bc;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.workout-back-button:hover {
+  color: #ffffff;
+  border-color: #555866;
+  background: #1b1e27;
+}
+
+.workout-header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ea1ac;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  display: block;
+  border-radius: 50%;
+  background: #c8ff00;
+  box-shadow: 0 0 10px rgba(200, 255, 0, 0.6);
+}
+
+
+/* =========================================================
+   TITLE
+   ========================================================= */
+
+.workout-title-section {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 28px;
+}
+
+.workout-title-section p {
+  margin: 0 0 7px;
+  color: #c8ff00;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.workout-title-section h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(28px, 3vw, 44px);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -1.5px;
+}
+
+.workout-title-section > div > span {
+  display: block;
+  margin-top: 10px;
+  color: #858894;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.workout-timer-card {
+  min-width: 190px;
+  padding: 15px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #171922;
+  box-sizing: border-box;
+}
+
+.workout-timer-card svg {
+  flex-shrink: 0;
+  color: #c8ff00;
+}
+
+.workout-timer-card div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workout-timer-card span {
+  color: #737681;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.workout-timer-card strong {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* =========================================================
+   OVERVIEW CARDS
+   ========================================================= */
+
+.workout-overview-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.workout-overview-card {
+  min-height: 108px;
+  padding: 17px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #171922;
+  box-sizing: border-box;
+}
+
+.overview-icon {
+  width: 31px;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #20231b;
+  color: #c8ff00;
+}
+
+.workout-overview-card > span {
+  margin-top: 11px;
+  color: #777a86;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.workout-overview-card > strong {
+  margin-top: 3px;
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.workout-overview-card > strong small {
+  margin-left: 3px;
+  color: #6e717c;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
+
+.workout-progress-section {
+  padding: 18px 20px;
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #171922;
+}
+
+.workout-progress-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.workout-progress-heading p {
+  margin: 0 0 5px;
+  color: #777a86;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.workout-progress-heading strong {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.workout-progress-heading > span {
+  color: #888b96;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
+.workout-progress-track {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #292c35;
+}
+
+.workout-progress-fill {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: #c8ff00;
+  box-shadow: 0 0 12px rgba(200, 255, 0, 0.2);
+  transition: width 0.35s ease;
+}
+
+
+/* =========================================================
+   ACTIVE EXERCISE
+   ========================================================= */
+
+.active-exercise-card {
+  padding: 24px;
+  margin-bottom: 28px;
+  border: 1px solid #353a28;
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      135deg,
+      #1b1f1c 0%,
+      #171922 55%,
+      #15171e 100%
+    );
+  box-sizing: border-box;
+}
+
+.active-exercise-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 25px;
+}
+
+.active-exercise-top p {
+  margin: 0 0 7px;
+  color: #c8ff00;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+.active-exercise-top h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+}
+
+.active-exercise-top > div > span {
+  display: block;
+  margin-top: 7px;
+  color: #7f828d;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.exercise-number-large {
+  color: rgba(200, 255, 0, 0.15);
+  font-size: 56px;
+  font-weight: 900;
+  line-height: 0.8;
+  letter-spacing: -3px;
+}
+
+
+/* =========================================================
+   ACTIVE EXERCISE STATS
+   ========================================================= */
+
+.active-exercise-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-top: 25px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--border);
+}
+
+.active-exercise-stats > div {
+  min-height: 72px;
+  padding: 14px 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #15171e;
+}
+
+.active-exercise-stats span {
+  color: #70737e;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.active-exercise-stats strong {
+  margin-top: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   SET TRACKER
+   ========================================================= */
+
+.set-tracker {
+  margin-top: 23px;
+}
+
+.set-tracker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.set-tracker-heading > span {
+  color: #888b96;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.set-tracker-heading > strong {
+  color: #c8ff00;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.set-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.set-button {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #343743;
+  border-radius: 6px;
+  background: #111319;
+  color: #8d909c;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.set-button:hover {
+  border-color: #687035;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.set-button.completed {
+  border-color: #c8ff00;
+  background: #c8ff00;
+  color: #111318;
+}
+
+
+/* =========================================================
+   ACTIVE ACTIONS
+   ========================================================= */
+
+.active-exercise-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.workout-control-button,
+.workout-complete-button {
+  min-height: 42px;
+  padding: 0 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.workout-control-button {
+  border: 1px solid #363944;
+  background: #111319;
+  color: #ffffff;
+}
+
+.workout-control-button:hover {
+  background: #1d2029;
+  border-color: #555866;
+  transform: translateY(-1px);
+}
+
+.workout-complete-button {
+  border: 1px solid #c8ff00;
+  background: #c8ff00;
+  color: #101116;
+}
+
+.workout-complete-button:hover {
+  background: #d7ff42;
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   EXERCISE QUEUE
+   ========================================================= */
+
+.workout-exercise-section {
+  margin-bottom: 28px;
+}
+
+.workout-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.workout-section-heading p {
+  margin: 0 0 5px;
+  color: #c8ff00;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.workout-section-heading h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.workout-section-heading > span {
+  color: #777a86;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.workout-exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.workout-exercise-row {
+  width: 100%;
+  min-height: 67px;
+  padding: 10px 15px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 105px 22px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: #171922;
+  color: #ffffff;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.workout-exercise-row:hover {
+  background: #1c1f28;
+  border-color: #343743;
+  transform: translateX(2px);
+}
+
+.workout-exercise-row.current {
+  border-color: #c8ff00;
+  background: #1d2318;
+}
+
+.workout-exercise-row.completed {
+  opacity: 0.72;
+}
+
+.queue-number {
+  width: 31px;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #30333e;
+  border-radius: 5px;
+  background: #111319;
+  color: #777a86;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.workout-exercise-row.current .queue-number {
+  border-color: #c8ff00;
+  color: #c8ff00;
+}
+
+.workout-exercise-row.completed .queue-number {
+  border-color: #c8ff00;
+  background: #c8ff00;
+  color: #101116;
+}
+
+.queue-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.queue-info strong {
+  overflow: hidden;
+  color: #f4f4f4;
+  font-size: 11px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-info span {
+  color: #737681;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.queue-load {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+}
+
+.queue-load span {
+  color: #676a75;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.queue-load strong {
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.workout-exercise-row > svg {
+  color: #666975;
+}
+
+.workout-exercise-row.current > svg {
+  color: #c8ff00;
+}
+
+
+/* =========================================================
+   BOTTOM ACTIONS
+   ========================================================= */
+
+.workout-bottom-actions {
+  min-height: 56px;
+  padding: 10px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid var(--border);
+}
+
+.workout-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.workout-reset-button,
+.workout-next-button,
+.workout-finish-button {
+  min-height: 39px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.workout-reset-button {
+  border: 1px solid #30333e;
+  background: transparent;
+  color: #777a86;
+}
+
+.workout-reset-button:hover {
+  color: #ffffff;
+  border-color: #555866;
+  background: #181b23;
+}
+
+.workout-next-button {
+  border: 1px solid #343743;
+  background: #181b23;
+  color: #d7d8dc;
+}
+
+.workout-next-button:hover:not(:disabled) {
+  border-color: #666975;
+  color: #ffffff;
+}
+
+.workout-next-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.workout-finish-button {
+  border: 1px solid #c8ff00;
+  background: #c8ff00;
+  color: #101116;
+}
+
+.workout-finish-button:hover {
+  background: #d7ff42;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.workout-loading {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c8ff00;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+
+/* =========================================================
+   FINISH MODAL
+   ========================================================= */
+
+.workout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 25px;
+  background: rgba(5, 6, 9, 0.82);
+  backdrop-filter: blur(8px);
+  box-sizing: border-box;
+}
+
+.workout-finish-modal {
+  width: min(480px, 100%);
+  padding: 34px;
+  position: relative;
+  border: 1px solid #383c48;
+  border-radius: 12px;
+  background: #171922;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.55);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.workout-modal-close {
+  width: 31px;
+  height: 31px;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #30333e;
+  border-radius: 6px;
+  background: #111319;
+  color: #7e818c;
+  cursor: pointer;
+}
+
+.workout-modal-close:hover {
+  color: #ffffff;
+  border-color: #555866;
+}
+
+.finish-success-icon {
+  width: 65px;
+  height: 65px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c8ff00;
+  border-radius: 50%;
+  background: #202719;
+  color: #c8ff00;
+  box-shadow: 0 0 30px rgba(200, 255, 0, 0.12);
+}
+
+.workout-finish-modal > p {
+  margin: 0 0 8px;
+  color: #c8ff00;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.workout-finish-modal h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 27px;
+  font-weight: 850;
+  letter-spacing: -0.8px;
+}
+
+.workout-finish-modal h2 span {
+  color: #c8ff00;
+}
+
+.finish-description {
+  display: block;
+  margin-top: 9px;
+  color: #858894;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.finish-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin: 25px 0;
+  overflow: hidden;
+  border: 1px solid #30333e;
+  border-radius: 7px;
+  background: #30333e;
+}
+
+.finish-stats > div {
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: #111319;
+}
+
+.finish-stats strong {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.finish-stats span {
+  color: #686b76;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.finish-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.finish-modal-actions button {
+  min-height: 41px;
+  border: 1px solid #343743;
+  border-radius: 6px;
+  background: #111319;
+  color: #d9dade;
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.finish-modal-actions button:hover {
+  border-color: #c8ff00;
+  background: #1d2318;
+  color: #c8ff00;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1050px) {
+  .workout-tracking-main {
+    padding: 25px 24px 35px;
+  }
+
+  .workout-overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .active-exercise-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+@media (max-width: 760px) {
+  .workout-tracking-main {
+    padding: 20px 16px 30px;
+  }
+
+  .workout-title-section {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workout-timer-card {
+    width: 100%;
+  }
+
+  .workout-overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .workout-exercise-row {
+    grid-template-columns: 35px minmax(0, 1fr) 22px;
+  }
+
+  .queue-load {
+    display: none;
+  }
+
+  .active-exercise-actions {
+    flex-direction: column;
+  }
+
+  .workout-control-button,
+  .workout-complete-button {
+    width: 100%;
+  }
+
+  .workout-bottom-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workout-bottom-right {
+    width: 100%;
+  }
+
+  .workout-reset-button,
+  .workout-next-button,
+  .workout-finish-button {
+    flex: 1;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .workout-overview-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .workout-overview-card {
+    min-height: 95px;
+    padding: 13px;
+  }
+
+  .workout-title-section h1 {
+    font-size: 28px;
+  }
+
+  .active-exercise-card {
+    padding: 18px;
+  }
+
+  .active-exercise-top h2 {
+    font-size: 21px;
+  }
+
+  .exercise-number-large {
+    font-size: 40px;
+  }
+
+  .active-exercise-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .set-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .workout-bottom-right {
+    flex-direction: column;
+  }
+
+  .workout-next-button,
+  .workout-finish-button,
+  .workout-reset-button {
+    width: 100%;
+  }
+
+  .finish-modal-actions {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================================================
+   WORKOUT TRACKING LAYOUT FIX
+   ========================================================= */
+
+.app-shell {
+  width: 100%;
+  max-width: 100vw;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.workout-tracking-main {
+  width: calc(100vw - 250px);
+  max-width: calc(100vw - 250px);
+  min-width: 0;
+  margin: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.workout-title-section,
+.workout-overview-grid,
+.workout-progress-section,
+.active-exercise-card,
+.workout-exercise-section,
+.workout-bottom-actions {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.active-exercise-top {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.active-exercise-top > div:first-child {
+  min-width: 0;
+}
+
+.active-exercise-top h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* =========================================================
+   FITPULSE - WORKOUT TRACKING FINAL LAYOUT FIX
+   ========================================================= */
+
+.app-shell {
+  width: 100%;
+  min-width: 0;
+  max-width: 100vw;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Main content stays beside the 250px sidebar */
+.workout-tracking-main {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  height: 100vh;
+  margin: 0;
+  padding: 28px 34px 40px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Prevent every section from pushing outside */
+.workout-tracking-main > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header */
+.workout-tracking-header {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Title */
+.workout-title-section {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.workout-title-section > div:first-child {
+  min-width: 0;
+}
+
+/* Overview */
+.workout-overview-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Progress */
+.workout-progress-section {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Active exercise */
+.active-exercise-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.active-exercise-top {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.active-exercise-top > div:first-child {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.active-exercise-top h2 {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Stats */
+.active-exercise-stats {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Exercise queue */
+.workout-exercise-section {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.workout-exercise-list {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.workout-exercise-row {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Bottom buttons */
+.workout-bottom-actions {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   DESKTOP
+   ========================================================= */
+
+@media (min-width: 1200px) {
+  .workout-tracking-main {
+    padding-left: 34px;
+    padding-right: 34px;
+  }
+}
+
+
+/* =========================================================
+   LAPTOP
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .workout-tracking-main {
+    padding: 24px;
+  }
+
+  .workout-overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .active-exercise-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+/* =========================================================
+   SMALL SCREEN
+   ========================================================= */
+
+@media (max-width: 760px) {
+  .workout-tracking-main {
+    padding: 20px 16px 30px;
+  }
+
+  .workout-title-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workout-timer-card {
+    width: 100%;
+  }
+
+  .workout-overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .workout-exercise-row {
+    grid-template-columns: 38px minmax(0, 1fr) 22px;
+  }
+
+  .queue-load {
+    display: none;
+  }
+
+  .workout-bottom-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workout-bottom-right {
+    width: 100%;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 520px) {
+  .workout-tracking-main {
+    padding: 16px 12px 25px;
+  }
+
+  .workout-overview-grid {
+    gap: 8px;
+  }
+
+  .workout-overview-card {
+    min-height: 90px;
+    padding: 12px;
+  }
+
+  .active-exercise-card {
+    padding: 17px;
+  }
+
+  .active-exercise-top h2 {
+    font-size: 20px;
+  }
+
+  .exercise-number-large {
+    font-size: 40px;
+  }
+
+  .active-exercise-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .active-exercise-actions {
+    flex-direction: column;
+  }
+
+  .workout-control-button,
+  .workout-complete-button {
+    width: 100%;
+  }
+
+  .workout-bottom-right {
+    flex-direction: column;
+  }
+
+  .workout-reset-button,
+  .workout-next-button,
+  .workout-finish-button {
+    width: 100%;
+  }
+}
+/* =========================================================
+   WORKOUT TRACKING - FORCE CONTENT ALIGNMENT
+   ========================================================= */
+
+.workout-tracking-main {
+  position: relative !important;
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+
+  margin: 0 !important;
+  padding: 32px 34px 45px !important;
+
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* Make every direct section respect the main padding */
+.workout-tracking-main > header,
+.workout-tracking-main > section {
+  position: relative;
+  left: 0 !important;
+  right: auto !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Header */
+.workout-tracking-header {
+  padding: 0 !important;
+}
+
+/* Title */
+.workout-title-section {
+  padding: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Cards */
+.workout-overview-grid {
+  margin-left: 0 !important;
+  padding: 0 !important;
+}
+
+.workout-progress-section {
+  margin-left: 0 !important;
+}
+
+.active-exercise-card {
+  margin-left: 0 !important;
+  padding: 24px !important;
+}
+
+.workout-exercise-section {
+  margin-left: 0 !important;
+}
+
+.workout-bottom-actions {
+  margin-left: 0 !important;
+}
+
+
+/* =========================================================
+   PREVENT CONTENT FROM HIDING BEHIND SIDEBAR
+   ========================================================= */
+
+.workout-tracking-main h1,
+.workout-tracking-main h2,
+.workout-tracking-main h3,
+.workout-tracking-main p,
+.workout-tracking-main span,
+.workout-tracking-main button,
+.workout-tracking-main div {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   TITLE FORCE ALIGN
+   ========================================================= */
+
+.workout-title-section > div {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.workout-title-section h1 {
+  margin-left: 0 !important;
+}
+
+
+/* =========================================================
+   ACTIVE EXERCISE FORCE ALIGN
+   ========================================================= */
+
+.active-exercise-top {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.active-exercise-top > div {
+  margin-left: 0 !important;
+}
+
+
+/* =========================================================
+   DESKTOP WIDTH
+   ========================================================= */
+
+@media (min-width: 761px) {
+  .workout-tracking-main {
+    margin-left: 0 !important;
+    padding-left: 34px !important;
+    padding-right: 34px !important;
+  }
+}
+
+
+/* =========================================================
+   SMALL SCREEN
+   ========================================================= */
+
+@media (max-width: 760px) {
+  .workout-tracking-main {
+    padding: 22px 18px 35px !important;
+  }
+}
+/* =========================================================
+   FITPULSE WORKOUT TRACKING - SIDEBAR OVERLAP FIX
+   ========================================================= */
+
+.workout-tracking-main {
+  position: relative !important;
+
+  /* Sidebar width = 250px */
+  margin-left: 250px !important;
+
+  width: calc(100vw - 250px) !important;
+  max-width: calc(100vw - 250px) !important;
+
+  min-width: 0 !important;
+  height: 100vh !important;
+
+  padding: 32px 34px 45px !important;
+
+  box-sizing: border-box !important;
+
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+
+/* Header */
+.workout-tracking-header {
+  width: 100% !important;
+  margin-left: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Title */
+.workout-title-section {
+  width: 100% !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Overview cards */
+.workout-overview-grid {
+  width: 100% !important;
+  margin-left: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Progress */
+.workout-progress-section {
+  width: 100% !important;
+  margin-left: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Current exercise */
+.active-exercise-card {
+  width: 100% !important;
+  margin-left: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Exercise list */
+.workout-exercise-section {
+  width: 100% !important;
+  margin-left: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Bottom */
+.workout-bottom-actions {
+  width: 100% !important;
+  margin-left: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* =========================================================
+   TABLET / MOBILE
+   ========================================================= */
+
+@media (max-width: 760px) {
+  .workout-tracking-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 22px 18px 35px !important;
+  }
+}
+/* =========================================================
+   FITPULSE - GLOBAL PAGE SCROLL FIX
+   ========================================================= */
+
+/* App itself stays fixed */
+.app-shell {
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+
+  display: flex;
+
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+
+/* Sidebar stays fixed */
+.app-shell > .sidebar {
+  flex: 0 0 250px;
+  width: 250px;
+  min-width: 250px;
+  height: 100vh;
+
+  overflow: hidden;
+}
+
+
+/* Every app page gets its own scroll */
+.app-shell > main {
+  flex: 1 1 auto;
+
+  width: auto;
+  min-width: 0;
+  max-width: none;
+
+  height: 100vh;
+  min-height: 0;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  box-sizing: border-box;
+
+  scrollbar-width: thin;
+  scrollbar-color: #343744 transparent;
+}
+
+
+/* Chrome / Edge scrollbar */
+.app-shell > main::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app-shell > main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-shell > main::-webkit-scrollbar-thumb {
+  background: #343744;
+  border-radius: 10px;
+}
+
+.app-shell > main::-webkit-scrollbar-thumb:hover {
+  background: #4a4d59;
+}
+
+
+/* Prevent content from forcing the whole browser */
+.app-shell > main > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   PUBLIC PAGES / FULL-WIDTH PAGES
+   ========================================================= */
+
+body {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+html,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+}
+.payment-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.payment-modal {
+  width: min(500px, 100%);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.55);
+}
+
+.payment-close {
+  position: absolute;
+  top: 15px;
+  right: 18px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.payment-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 24px;
+}
+
+.payment-title-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(200, 255, 0, 0.1);
+  color: var(--lime);
+  display: grid;
+  place-items: center;
+}
+
+.payment-header p {
+  margin: 0 0 4px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+
+.payment-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.payment-plan-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.payment-plan-summary div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.payment-plan-summary span,
+.payment-total span,
+.transaction-box span {
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+}
+
+.payment-plan-summary strong {
+  font-size: 17px;
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-method {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.payment-method:hover,
+.payment-method.active {
+  border-color: var(--lime);
+}
+
+.payment-method > div {
+  flex: 1;
+}
+
+.payment-method strong,
+.payment-method span {
+  display: block;
+}
+
+.payment-method strong {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.payment-method div span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.payment-radio {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: grid !important;
+  place-items: center;
+  color: var(--lime);
+  font-size: 12px;
+}
+
+.payment-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.payment-total strong {
+  font-size: 22px;
+}
+
+.pay-now-button {
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--lime);
+  color: #101010;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pay-now-button:hover {
+  opacity: 0.9;
+}
+
+.payment-note {
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  margin: 13px 0 0;
+}
+
+.payment-processing {
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.payment-loader {
+  width: 46px;
+  height: 46px;
+  border: 3px solid var(--border);
+  border-top-color: var(--lime);
+  border-radius: 50%;
+  animation: paymentSpin 0.8s linear infinite;
+  margin-bottom: 24px;
+}
+
+@keyframes paymentSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.payment-processing p,
+.payment-success p {
+  color: var(--lime);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+
+.payment-processing h2,
+.payment-success h2 {
+  margin: 7px 0;
+}
+
+.payment-processing span,
+.payment-success > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.payment-success {
+  text-align: center;
+  padding: 15px 0 4px;
+}
+
+.success-icon {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(200, 255, 0, 0.1);
+  color: var(--lime);
+}
+
+.transaction-box {
+  margin: 24px 0;
+  padding: 15px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.transaction-box div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 9px 0;
+}
+
+.transaction-box div + div {
+  border-top: 1px solid var(--border);
+}
+
+.transaction-box strong {
+  font-size: 11px;
+}

@@ -21,6 +21,58 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+
+    // Profile information
+    profilePicture: {
+      type: String,
+      default: "",
+    },
+
+    height: {
+      type: Number,
+      default: 180,
+    },
+
+    targetWeight: {
+      type: Number,
+      default: 82,
+    },
+
+    trainingFocus: {
+      type: String,
+      default: "Hypertrophy & Stamina",
+    },
+
+    frequencyPreference: {
+      type: String,
+      default: "5 Days / Week",
+    },
+
+    fitnessGoal: {
+      type: String,
+      default: "Build Performance",
+    },
+
+    // App settings
+    darkMode: {
+      type: Boolean,
+      default: true,
+    },
+
+    notifications: {
+      type: Boolean,
+      default: true,
+    },
+
+    privateActivity: {
+      type: Boolean,
+      default: false,
+    },
+
+    language: {
+      type: String,
+      default: "English",
+    },
   },
   {
     timestamps: true,

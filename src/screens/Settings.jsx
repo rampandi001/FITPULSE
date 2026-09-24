@@ -9,39 +9,295 @@ import {
   ShieldCheck,
   Smartphone,
   UserRound,
+  Check,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Sidebar from "../components/Sidebar";
 
 function Settings({ navigate }) {
+  const [user, setUser] = useState(null);
+
   const [darkMode, setDarkMode] = useState(true);
   const [notifications, setNotifications] = useState(true);
   const [privacy, setPrivacy] = useState(false);
+  const [language, setLanguage] = useState("English");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  // --------------------------------------------------
+  // LOAD USER + SETTINGS
+  // --------------------------------------------------
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem("fitpulse_token");
+
+        if (!token) {
+          navigate("signin");
+          return;
+        }
+
+        // Load stored user
+        const storedUser = localStorage.getItem("fitpulse_user");
+
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+
+        // Load settings from backend
+        const response = await fetch(
+          "http://localhost:5000/api/settings",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(
+            data.message || "Failed to load settings."
+          );
+          return;
+        }
+
+        setDarkMode(
+          data.darkMode !== undefined
+            ? data.darkMode
+            : true
+        );
+
+        setNotifications(
+          data.notifications !== undefined
+            ? data.notifications
+            : true
+        );
+
+        setPrivacy(
+          data.privateActivity !== undefined
+            ? data.privateActivity
+            : false
+        );
+
+        setLanguage(
+          data.language || "English"
+        );
+      } catch (err) {
+        console.error("SETTINGS LOAD ERROR:", err);
+
+        setError(
+          "Unable to connect to FITPULSE backend."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [navigate]);
+
+  // --------------------------------------------------
+  // SAVE SETTINGS
+  // --------------------------------------------------
+
+  const saveSettings = async (
+    updatedValues = {}
+  ) => {
+    try {
+      setSaving(true);
+      setMessage("");
+      setError("");
+
+      const token = localStorage.getItem(
+        "fitpulse_token"
+      );
+
+      if (!token) {
+        navigate("signin");
+        return;
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/api/settings",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            darkMode,
+            notifications,
+            privateActivity: privacy,
+            language,
+            ...updatedValues,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          data.message || "Failed to save settings."
+        );
+        return;
+      }
+
+      // Update state with backend values
+      setDarkMode(data.settings.darkMode);
+      setNotifications(
+        data.settings.notifications
+      );
+      setPrivacy(
+        data.settings.privateActivity
+      );
+      setLanguage(
+        data.settings.language
+      );
+
+      setMessage("Settings saved successfully.");
+
+      setTimeout(() => {
+        setMessage("");
+      }, 2500);
+    } catch (err) {
+      console.error("SETTINGS SAVE ERROR:", err);
+
+      setError(
+        "Unable to connect to FITPULSE backend."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // --------------------------------------------------
+  // TOGGLE HANDLERS
+  // --------------------------------------------------
+
+  const handleDarkMode = () => {
+    const newValue = !darkMode;
+
+    setDarkMode(newValue);
+
+    saveSettings({
+      darkMode: newValue,
+    });
+  };
+
+  const handleNotifications = () => {
+    const newValue = !notifications;
+
+    setNotifications(newValue);
+
+    saveSettings({
+      notifications: newValue,
+    });
+  };
+
+  const handlePrivacy = () => {
+    const newValue = !privacy;
+
+    setPrivacy(newValue);
+
+    saveSettings({
+      privateActivity: newValue,
+    });
+  };
+
+  // --------------------------------------------------
+  // LOGOUT
+  // --------------------------------------------------
+
+  const handleLogout = () => {
+    localStorage.removeItem("fitpulse_token");
+    localStorage.removeItem("fitpulse_user");
+
+    window.dispatchEvent(
+      new Event("fitpulse-user-updated")
+    );
+
+    navigate("landing");
+  };
+
+  // --------------------------------------------------
+  // LOADING
+  // --------------------------------------------------
+
+  if (loading) {
+    return (
+      <div className="app-shell">
+        <Sidebar
+          navigate={navigate}
+          active="settings"
+        />
+
+        <main className="settings-main">
+          <div className="settings-loading">
+            LOADING SETTINGS...
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
-      <Sidebar navigate={navigate} active="settings" />
+      <Sidebar
+        navigate={navigate}
+        active="settings"
+      />
 
       <main className="settings-main">
 
         {/* HEADER */}
+
         <header className="settings-header">
           <div>
             <p>ACCOUNT CONTROL</p>
+
             <h1>SETTINGS</h1>
+
             <span>
-              Manage your account, preferences and FITPULSE experience.
+              Manage your account, preferences and
+              FITPULSE experience.
             </span>
           </div>
         </header>
 
+        {/* STATUS MESSAGE */}
+
+        {message && (
+          <div className="settings-success">
+            <Check size={16} />
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="settings-error">
+            {error}
+          </div>
+        )}
+
         {/* PROFILE */}
+
         <section className="settings-section">
 
           <div className="settings-section-heading">
             <div>
               <p>ACCOUNT</p>
+
               <h2>PROFILE SETTINGS</h2>
             </div>
 
@@ -51,17 +307,43 @@ function Settings({ navigate }) {
           <div className="settings-profile-card">
 
             <div className="settings-avatar">
-              <UserRound size={27} />
+
+              {user?.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt={user.name || "Profile"}
+                />
+              ) : (
+                <UserRound size={27} />
+              )}
+
             </div>
 
             <div className="settings-profile-info">
-              <strong>Karthik</strong>
-              <span>karthik@fitpulse.com</span>
-              <small>ATHLETE LVL 14</small>
+
+              <strong>
+                {user?.name || "Athlete"}
+              </strong>
+
+              <span>
+                {user?.email ||
+                  "No email available"}
+              </span>
+
+              <small>
+                ATHLETE LVL 14
+              </small>
+
             </div>
 
-            <button className="settings-edit-button">
+            <button
+              className="settings-edit-button"
+              onClick={() =>
+                navigate("profile")
+              }
+            >
               EDIT PROFILE
+
               <ChevronRight size={15} />
             </button>
 
@@ -70,20 +352,25 @@ function Settings({ navigate }) {
         </section>
 
         {/* PREFERENCES */}
+
         <section className="settings-section">
 
           <div className="settings-section-heading">
+
             <div>
               <p>EXPERIENCE</p>
+
               <h2>APP PREFERENCES</h2>
             </div>
 
             <span>3 OPTIONS</span>
+
           </div>
 
           <div className="settings-list">
 
             {/* DARK MODE */}
+
             <div className="settings-row">
 
               <div className="settings-row-icon">
@@ -91,17 +378,25 @@ function Settings({ navigate }) {
               </div>
 
               <div className="settings-row-content">
-                <strong>Dark Interface</strong>
+
+                <strong>
+                  Dark Interface
+                </strong>
+
                 <span>
-                  Use the dark FITPULSE performance interface.
+                  Use the dark FITPULSE
+                  performance interface.
                 </span>
+
               </div>
 
               <button
                 className={`settings-toggle ${
                   darkMode ? "active" : ""
                 }`}
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={handleDarkMode}
+                disabled={saving}
+                aria-label="Toggle dark mode"
               >
                 <span />
               </button>
@@ -109,6 +404,7 @@ function Settings({ navigate }) {
             </div>
 
             {/* NOTIFICATIONS */}
+
             <div className="settings-row">
 
               <div className="settings-row-icon">
@@ -116,19 +412,25 @@ function Settings({ navigate }) {
               </div>
 
               <div className="settings-row-content">
-                <strong>Push Notifications</strong>
+
+                <strong>
+                  Push Notifications
+                </strong>
+
                 <span>
-                  Receive workout reminders and performance alerts.
+                  Receive workout reminders and
+                  performance alerts.
                 </span>
+
               </div>
 
               <button
                 className={`settings-toggle ${
                   notifications ? "active" : ""
                 }`}
-                onClick={() =>
-                  setNotifications(!notifications)
-                }
+                onClick={handleNotifications}
+                disabled={saving}
+                aria-label="Toggle notifications"
               >
                 <span />
               </button>
@@ -136,6 +438,7 @@ function Settings({ navigate }) {
             </div>
 
             {/* PRIVACY */}
+
             <div className="settings-row">
 
               <div className="settings-row-icon">
@@ -143,17 +446,25 @@ function Settings({ navigate }) {
               </div>
 
               <div className="settings-row-content">
-                <strong>Private Activity</strong>
+
+                <strong>
+                  Private Activity
+                </strong>
+
                 <span>
-                  Keep your workout activity visible only to you.
+                  Keep your workout activity
+                  visible only to you.
                 </span>
+
               </div>
 
               <button
                 className={`settings-toggle ${
                   privacy ? "active" : ""
                 }`}
-                onClick={() => setPrivacy(!privacy)}
+                onClick={handlePrivacy}
+                disabled={saving}
+                aria-label="Toggle private activity"
               >
                 <span />
               </button>
@@ -165,62 +476,116 @@ function Settings({ navigate }) {
         </section>
 
         {/* SECURITY */}
+
         <section className="settings-section">
 
           <div className="settings-section-heading">
+
             <div>
               <p>ACCOUNT PROTECTION</p>
+
               <h2>SECURITY & PRIVACY</h2>
             </div>
 
             <ShieldCheck size={18} />
+
           </div>
 
           <div className="settings-security-grid">
 
-            <button className="settings-security-card">
+            {/* CHANGE PASSWORD */}
+
+            <button
+              className="settings-security-card"
+              onClick={() => {
+                setMessage(
+                  "Password management will be available soon."
+                );
+              }}
+            >
+
               <div className="settings-security-icon">
                 <Lock size={18} />
               </div>
 
               <div>
-                <strong>CHANGE PASSWORD</strong>
+                <strong>
+                  CHANGE PASSWORD
+                </strong>
+
                 <span>
                   Update your account password.
                 </span>
               </div>
 
               <ChevronRight size={16} />
+
             </button>
 
-            <button className="settings-security-card">
+            {/* DEVICES */}
+
+            <button
+              className="settings-security-card"
+              onClick={() => {
+                setMessage(
+                  "Connected device management will be available soon."
+                );
+              }}
+            >
+
               <div className="settings-security-icon">
                 <Smartphone size={18} />
               </div>
 
               <div>
-                <strong>CONNECTED DEVICES</strong>
+                <strong>
+                  CONNECTED DEVICES
+                </strong>
+
                 <span>
-                  Manage devices connected to your account.
+                  Manage devices connected to
+                  your account.
                 </span>
               </div>
 
               <ChevronRight size={16} />
+
             </button>
 
-            <button className="settings-security-card">
+            {/* LANGUAGE */}
+
+            <button
+              className="settings-security-card"
+              onClick={() => {
+                const newLanguage =
+                  language === "English"
+                    ? "English"
+                    : "English";
+
+                setLanguage(newLanguage);
+
+                saveSettings({
+                  language: newLanguage,
+                });
+              }}
+            >
+
               <div className="settings-security-icon">
                 <Globe size={18} />
               </div>
 
               <div>
-                <strong>LANGUAGE</strong>
+                <strong>
+                  LANGUAGE
+                </strong>
+
                 <span>
-                  English · United States
+                  {language} · United States
                 </span>
               </div>
 
               <ChevronRight size={16} />
+
             </button>
 
           </div>
@@ -228,30 +593,47 @@ function Settings({ navigate }) {
         </section>
 
         {/* LOGOUT */}
+
         <section className="settings-logout-section">
 
           <div>
+
             <p>SESSION CONTROL</p>
-            <h2>SIGN OUT OF FITPULSE</h2>
+
+            <h2>
+              SIGN OUT OF FITPULSE
+            </h2>
+
             <span>
-              You can sign back in anytime using your account credentials.
+              You can sign back in anytime using
+              your account credentials.
             </span>
+
           </div>
 
           <button
             className="settings-logout-button"
-            onClick={() => navigate("landing")}
+            onClick={handleLogout}
           >
             <LogOut size={16} />
+
             LOG OUT
           </button>
 
         </section>
 
         {/* FOOTER */}
+
         <footer className="settings-footer">
-          <span>FITPULSE PERFORMANCE SYSTEM</span>
-          <span>VERSION 2.0</span>
+
+          <span>
+            FITPULSE PERFORMANCE SYSTEM
+          </span>
+
+          <span>
+            VERSION 2.0
+          </span>
+
         </footer>
 
       </main>

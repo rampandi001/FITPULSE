@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import {
   Activity,
   BarChart3,
@@ -8,13 +10,58 @@ import {
   Dumbbell,
   LayoutDashboard,
   Settings,
-  ShieldCheck,
   Target,
+  UserRound,
 } from "lucide-react";
 
-import Logo from "./Logo";
-
 function Sidebar({ navigate, active = "dashboard" }) {
+  const [user, setUser] = useState(null);
+
+  const loadUser = () => {
+    try {
+      const storedUser = localStorage.getItem("fitpulse_user");
+
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("SIDEBAR USER ERROR:", error);
+      setUser(null);
+    }
+  };
+
+  useEffect(() => {
+    loadUser();
+
+    const handleUserUpdate = () => {
+      loadUser();
+    };
+
+    window.addEventListener(
+      "fitpulse-user-updated",
+      handleUserUpdate
+    );
+
+    window.addEventListener(
+      "storage",
+      handleUserUpdate
+    );
+
+    return () => {
+      window.removeEventListener(
+        "fitpulse-user-updated",
+        handleUserUpdate
+      );
+
+      window.removeEventListener(
+        "storage",
+        handleUserUpdate
+      );
+    };
+  }, []);
+
   const menuItems = [
     {
       label: "Dashboard",
@@ -53,7 +100,7 @@ function Sidebar({ navigate, active = "dashboard" }) {
     },
     {
       label: "Calorie & Activity Tracking",
-      icon: ShieldCheck,
+      icon: Activity,
       screen: "calories",
     },
     {
@@ -86,27 +133,54 @@ function Sidebar({ navigate, active = "dashboard" }) {
 
   return (
     <aside className="sidebar">
-      {/* LOGO */}
+
+      {/* =========================
+          FITPULSE LOGO
+      ========================== */}
+
       <div className="sidebar-logo">
-        <Logo />
+
+        <div className="sidebar-logo-mark">
+          <Activity
+            size={19}
+            strokeWidth={3}
+          />
+        </div>
+
+        <div className="sidebar-logo-text">
+          FITPULSE
+        </div>
+
       </div>
 
-      {/* NAVIGATION */}
+      {/* =========================
+          NAVIGATION
+      ========================== */}
+
       <nav className="sidebar-nav">
+
         {menuItems.map((item) => {
           const Icon = item.icon;
 
           return (
             <button
               key={item.label}
+              type="button"
               className={`sidebar-item ${
-                active === item.screen ? "active" : ""
+                active === item.screen
+                  ? "active"
+                  : ""
               }`}
               onClick={() => navigate(item.screen)}
             >
-              <Icon size={15} strokeWidth={1.8} />
+              <Icon
+                size={16}
+                strokeWidth={1.9}
+              />
 
-              <span>{item.label}</span>
+              <span>
+                {item.label}
+              </span>
 
               {item.notification && (
                 <span className="notification-badge">
@@ -116,27 +190,50 @@ function Sidebar({ navigate, active = "dashboard" }) {
             </button>
           );
         })}
+
       </nav>
 
-      {/* PROFILE */}
+      {/* =========================
+          USER PROFILE
+      ========================== */}
+
       <button
+        type="button"
         className={`sidebar-user ${
-          active === "profile" ? "profile-active" : ""
+          active === "profile"
+            ? "profile-active"
+            : ""
         }`}
         onClick={() => navigate("profile")}
       >
+
         <div className="user-avatar">
-          <img
-            src="/images/profile.jpg"
-            alt="Karthik"
-          />
+
+          {user?.profilePicture ? (
+            <img
+              src={user.profilePicture}
+              alt={user.name || "Profile"}
+            />
+          ) : (
+            <UserRound size={17} />
+          )}
+
         </div>
 
         <div className="user-details">
-          <strong>Karthik</strong>
-          <span>Athlete Lvl 14</span>
+
+          <strong>
+            {user?.name || "Athlete"}
+          </strong>
+
+          <span>
+            Athlete Lvl 14
+          </span>
+
         </div>
+
       </button>
+
     </aside>
   );
 }

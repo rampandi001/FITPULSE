@@ -1,165 +1,569 @@
+import { useEffect, useRef, useState } from "react";
+
 import {
-  Activity,
-  CalendarDays,
+  ArrowLeft,
+  Camera,
+  Check,
   Edit3,
-  Flame,
-  Target,
+  Mail,
+  Save,
+  UserRound,
 } from "lucide-react";
 
 import Sidebar from "../components/Sidebar";
 
 function Profile({ navigate }) {
+  const fileInputRef = useRef(null);
+
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    profilePicture: "",
+    height: "",
+    targetWeight: "",
+    trainingFocus: "",
+    frequencyPreference: "",
+    fitnessGoal: "",
+  });
+
+  const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  // LOAD PROFILE
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = localStorage.getItem("fitpulse_token");
+
+        if (!token) {
+          navigate("signin");
+          return;
+        }
+
+        const response = await fetch(
+          "http://localhost:5000/api/profile",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.message || "Failed to load profile.");
+          return;
+        }
+
+        const loadedProfile = {
+          name: data.name || "",
+          email: data.email || "",
+          profilePicture: data.profilePicture || "",
+          height: data.height || "",
+          targetWeight: data.targetWeight || "",
+          trainingFocus: data.trainingFocus || "",
+          frequencyPreference: data.frequencyPreference || "",
+          fitnessGoal: data.fitnessGoal || "",
+        };
+
+        setProfile(loadedProfile);
+
+        // Keep localStorage updated
+        const existingUser = JSON.parse(
+          localStorage.getItem("fitpulse_user") || "{}"
+        );
+
+        localStorage.setItem(
+          "fitpulse_user",
+          JSON.stringify({
+            ...existingUser,
+            ...loadedProfile,
+            id: data._id || existingUser.id,
+          })
+        );
+
+        window.dispatchEvent(
+          new Event("fitpulse-user-updated")
+        );
+      } catch (err) {
+        console.error(err);
+        setError("Unable to connect to backend.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [navigate]);
+
+  // HANDLE INPUT
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setProfile((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+
+    setMessage("");
+    setError("");
+  };
+
+  // PROFILE PICTURE
+  const handleProfilePicture = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be smaller than 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const image = new Image();
+
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+
+        const maxSize = 400;
+
+        let width = image.width;
+        let height = image.height;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+
+        context.drawImage(
+          image,
+          0,
+          0,
+          width,
+          height
+        );
+
+        const compressedImage = canvas.toDataURL(
+          "image/jpeg",
+          0.8
+        );
+
+        setProfile((previous) => ({
+          ...previous,
+          profilePicture: compressedImage,
+        }));
+
+        setMessage("Profile picture selected.");
+        setError("");
+      };
+
+      image.src = reader.result;
+    };
+
+    reader.readAsDataURL(file);
+
+    // Allow selecting same image again
+    e.target.value = "";
+  };
+
+  // SAVE PROFILE
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setMessage("");
+      setError("");
+
+      const token = localStorage.getItem("fitpulse_token");
+
+      if (!token) {
+        navigate("signin");
+        return;
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/api/profile",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: profile.name,
+            profilePicture: profile.profilePicture,
+            height: Number(profile.height),
+            targetWeight: Number(profile.targetWeight),
+            trainingFocus: profile.trainingFocus,
+            frequencyPreference: profile.frequencyPreference,
+            fitnessGoal: profile.fitnessGoal,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          data.message || "Failed to update profile."
+        );
+        return;
+      }
+
+      const updatedProfile = {
+        name: data.user.name || "",
+        email: data.user.email || "",
+        profilePicture:
+          data.user.profilePicture || "",
+        height: data.user.height || "",
+        targetWeight:
+          data.user.targetWeight || "",
+        trainingFocus:
+          data.user.trainingFocus || "",
+        frequencyPreference:
+          data.user.frequencyPreference || "",
+        fitnessGoal:
+          data.user.fitnessGoal || "",
+      };
+
+      setProfile(updatedProfile);
+
+      // Update localStorage
+      localStorage.setItem(
+        "fitpulse_user",
+        JSON.stringify({
+          id: data.user.id,
+          ...updatedProfile,
+        })
+      );
+
+      // Tell Sidebar to refresh
+      window.dispatchEvent(
+        new Event("fitpulse-user-updated")
+      );
+
+      setEditMode(false);
+      setMessage(
+        "Profile updated successfully."
+      );
+    } catch (err) {
+      console.error(err);
+      setError("Unable to connect to backend.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="app-shell">
+        <Sidebar
+          navigate={navigate}
+          active="profile"
+        />
+
+        <main className="profile-main">
+          <div className="profile-loading">
+            LOADING PROFILE...
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
-      <Sidebar navigate={navigate} active="profile" />
+      <Sidebar
+        navigate={navigate}
+        active="profile"
+      />
 
       <main className="profile-main">
-        {/* PROFILE HEADER */}
-        <section className="profile-header">
-          <div className="profile-user">
-            <div className="profile-avatar">
-              <img
-                src="/images/profile.jpg"
-                alt="Karthik profile"
-              />
-            </div>
 
-            <div className="profile-user-info">
-              <div className="profile-name-row">
-                <h1>Karthik</h1>
-                <span>LVL 14 ATHLETE</span>
-              </div>
-
-              <p>
-                Chennai, Tamil Nadu · Premium Member since Jan 2026
-              </p>
-            </div>
-          </div>
-
-          <button className="profile-edit-button">
-            <Edit3 size={15} />
-            EDIT PROFILE
+        {/* HEADER */}
+        <header className="profile-header">
+          <button
+            className="profile-back-button"
+            onClick={() => navigate("dashboard")}
+          >
+            <ArrowLeft size={16} />
+            BACK TO DASHBOARD
           </button>
+
+          <button
+            className="profile-edit-button"
+            onClick={() => {
+              setEditMode(!editMode);
+              setMessage("");
+              setError("");
+            }}
+          >
+            <Edit3 size={15} />
+
+            {editMode
+              ? "CANCEL EDIT"
+              : "EDIT PROFILE"}
+          </button>
+        </header>
+
+        {/* TITLE */}
+        <section className="profile-title-section">
+          <p>ATHLETE PROFILE</p>
+
+          <h1>
+            YOUR <span>PROFILE</span>
+          </h1>
+
+          <span>
+            Manage your personal information
+            and training preferences.
+          </span>
         </section>
 
-        {/* STATS */}
-        <section className="profile-stats">
-          <div className="profile-stat-card">
-            <div className="profile-stat-icon">
-              <Activity size={17} />
+        {/* SUCCESS */}
+        {message && (
+          <div className="profile-success">
+            <Check size={16} />
+            {message}
+          </div>
+        )}
+
+        {/* ERROR */}
+        {error && (
+          <div className="profile-error">
+            {error}
+          </div>
+        )}
+
+        {/* PROFILE GRID */}
+        <section className="profile-grid">
+
+          {/* PROFILE CARD */}
+          <div className="profile-card profile-main-card">
+
+            <div className="profile-avatar-large">
+
+              {profile.profilePicture ? (
+                <img
+                  src={profile.profilePicture}
+                  alt={profile.name || "Profile"}
+                />
+              ) : (
+                <UserRound size={38} />
+              )}
+
+              {editMode && (
+                <>
+                  <button
+                    type="button"
+                    className="profile-camera-button"
+                    onClick={() =>
+                      fileInputRef.current?.click()
+                    }
+                    aria-label="Change profile picture"
+                  >
+                    <Camera size={15} />
+                  </button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePicture}
+                    style={{
+                      display: "none",
+                    }}
+                  />
+                </>
+              )}
             </div>
 
-            <strong>148 hrs</strong>
-            <span>Total Active Time</span>
-          </div>
+            <h2>
+              {profile.name || "Athlete"}
+            </h2>
 
-          <div className="profile-stat-card">
-            <div className="profile-stat-icon">
-              <Flame size={17} />
+            <div className="profile-email">
+              <Mail size={14} />
+              {profile.email}
             </div>
 
-            <strong>12,450 kcal</strong>
-            <span>Energy Expended</span>
-          </div>
-
-          <div className="profile-stat-card">
-            <div className="profile-stat-icon">
-              <Target size={17} />
+            <div className="profile-level">
+              <span>ATHLETE LEVEL</span>
+              <strong>14</strong>
             </div>
-
-            <strong>84 workouts</strong>
-            <span>Completed Sessions</span>
           </div>
-        </section>
 
-        {/* PROFILE INFORMATION */}
-        <section className="profile-info-grid">
-          <div className="profile-info-section">
-            <div className="profile-section-heading">
+          {/* PERSONAL INFORMATION */}
+          <div className="profile-card">
+
+            <div className="profile-card-heading">
               <div>
                 <p>PERSONAL INFORMATION</p>
-                <h2>Personal Bio Info</h2>
+                <h2>ATHLETE DETAILS</h2>
               </div>
             </div>
 
-            <div className="profile-fields">
-              <div className="profile-field">
-                <label>HEIGHT (cm)</label>
-                <div className="profile-input">
-                  180 cm
-                </div>
-              </div>
+            <div className="profile-form-grid">
 
-              <div className="profile-field">
-                <label>TARGET WEIGHT (kg)</label>
-                <div className="profile-input">
-                  82 kg
+              <label>
+                <span>FULL NAME</span>
+
+                <input
+                  type="text"
+                  name="name"
+                  value={profile.name}
+                  onChange={handleChange}
+                  disabled={!editMode}
+                />
+              </label>
+
+              <label>
+                <span>EMAIL ADDRESS</span>
+
+                <input
+                  type="email"
+                  value={profile.email}
+                  disabled
+                />
+              </label>
+
+              <label>
+                <span>HEIGHT</span>
+
+                <div className="profile-input-unit">
+
+                  <input
+                    type="number"
+                    name="height"
+                    value={profile.height}
+                    onChange={handleChange}
+                    disabled={!editMode}
+                  />
+
+                  <small>CM</small>
+
                 </div>
-              </div>
+              </label>
+
+              <label>
+                <span>TARGET WEIGHT</span>
+
+                <div className="profile-input-unit">
+
+                  <input
+                    type="number"
+                    name="targetWeight"
+                    value={profile.targetWeight}
+                    onChange={handleChange}
+                    disabled={!editMode}
+                  />
+
+                  <small>KG</small>
+
+                </div>
+              </label>
+
             </div>
           </div>
 
-          <div className="profile-info-section">
-            <div className="profile-section-heading">
+          {/* TRAINING PROFILE */}
+          <div className="profile-card profile-preferences-card">
+
+            <div className="profile-card-heading">
               <div>
                 <p>TRAINING PROFILE</p>
-                <h2>Fitness Targets</h2>
+                <h2>YOUR PREFERENCES</h2>
               </div>
             </div>
 
-            <div className="profile-fields">
-              <div className="profile-field">
-                <label>TRAINING FOCUS</label>
-                <div className="profile-input">
-                  Hypertrophy &amp; Stamina
-                </div>
-              </div>
+            <div className="profile-form-grid">
 
-              <div className="profile-field">
-                <label>FREQUENCY PREFERENCE</label>
-                <div className="profile-input">
-                  5 Days / Week
-                </div>
-              </div>
+              <label>
+                <span>TRAINING FOCUS</span>
+
+                <input
+                  type="text"
+                  name="trainingFocus"
+                  value={profile.trainingFocus}
+                  onChange={handleChange}
+                  disabled={!editMode}
+                />
+              </label>
+
+              <label>
+                <span>FREQUENCY</span>
+
+                <input
+                  type="text"
+                  name="frequencyPreference"
+                  value={profile.frequencyPreference}
+                  onChange={handleChange}
+                  disabled={!editMode}
+                />
+              </label>
+
+              <label className="profile-full-width">
+                <span>FITNESS GOAL</span>
+
+                <input
+                  type="text"
+                  name="fitnessGoal"
+                  value={profile.fitnessGoal}
+                  onChange={handleChange}
+                  disabled={!editMode}
+                />
+              </label>
+
             </div>
           </div>
+
         </section>
 
-        {/* EXTRA INFO */}
-        <section className="profile-extra">
-          <div className="profile-extra-card">
-            <div className="profile-extra-icon">
-              <CalendarDays size={18} />
-            </div>
+        {/* SAVE */}
+        {editMode && (
+          <div className="profile-save-area">
 
-            <div>
-              <span>MEMBER SINCE</span>
-              <strong>JANUARY 2026</strong>
-            </div>
+            <button
+              className="profile-save-button"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              <Save size={16} />
+
+              {saving
+                ? "SAVING..."
+                : "SAVE PROFILE"}
+            </button>
+
           </div>
+        )}
 
-          <div className="profile-extra-card">
-            <div className="profile-extra-icon">
-              <Activity size={18} />
-            </div>
-
-            <div>
-              <span>CURRENT LEVEL</span>
-              <strong>ATHLETE LEVEL 14</strong>
-            </div>
-          </div>
-
-          <div className="profile-extra-card">
-            <div className="profile-extra-icon">
-              <Target size={18} />
-            </div>
-
-            <div>
-              <span>PRIMARY GOAL</span>
-              <strong>BUILD PERFORMANCE</strong>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );

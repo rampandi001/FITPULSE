@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const User = require("../models/User");
 
 const router = express.Router();
@@ -17,36 +18,53 @@ router.post("/register", async (req, res) => {
     }
 
     const existingUser = await User.findOne({
-      email: email.toLowerCase(),
+      email: email.toLowerCase().trim(),
     });
 
     if (existingUser) {
-      return res.status(409).json({
-        message: "User with this email already exists.",
+      return res.status(400).json({
+        message: "Email already registered.",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email: email.toLowerCase(),
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
     });
 
+    const token = jwt.sign(
+      {
+        id: user._id.toString(),
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Registration successful.",
+      token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
+        profilePicture: user.profilePicture,
+        height: user.height,
+        targetWeight: user.targetWeight,
+        trainingFocus: user.trainingFocus,
+        frequencyPreference: user.frequencyPreference,
+        fitnessGoal: user.fitnessGoal,
       },
     });
   } catch (error) {
-    console.error("Register error:", error);
+    console.error("REGISTER ERROR:", error);
 
     res.status(500).json({
-      message: "Server error while registering user.",
+      message: "Registration failed.",
     });
   }
 });
@@ -63,7 +81,7 @@ router.post("/login", async (req, res) => {
     }
 
     const user = await User.findOne({
-      email: email.toLowerCase(),
+      email: email.toLowerCase().trim(),
     });
 
     if (!user) {
@@ -85,8 +103,7 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       {
-        userId: user._id,
-        email: user.email,
+        id: user._id.toString(),
       },
       process.env.JWT_SECRET,
       {
@@ -95,19 +112,25 @@ router.post("/login", async (req, res) => {
     );
 
     res.json({
-      message: "Login successful",
+      message: "Login successful.",
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
+        profilePicture: user.profilePicture,
+        height: user.height,
+        targetWeight: user.targetWeight,
+        trainingFocus: user.trainingFocus,
+        frequencyPreference: user.frequencyPreference,
+        fitnessGoal: user.fitnessGoal,
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("LOGIN ERROR:", error);
 
     res.status(500).json({
-      message: "Server error while logging in.",
+      message: "Login failed.",
     });
   }
 });

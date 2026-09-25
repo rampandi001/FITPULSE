@@ -12,91 +12,93 @@ import Sidebar from "../components/Sidebar";
 
 function Calories({ navigate }) {
   const [workouts, setWorkouts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const token = localStorage.getItem(
+  /*
+    LOAD WORKOUT HISTORY FROM BACKEND
+  */
+  const loadHistory = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const token =
+        localStorage.getItem("fitpulse_token");
+
+      if (!token) {
+        navigate("signin");
+        return;
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/api/workouts/history",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      /*
+        EXPIRED / INVALID TOKEN
+      */
+      if (response.status === 401) {
+        localStorage.removeItem(
           "fitpulse_token"
         );
 
-        if (!token) {
-          console.warn(
-            "CALORIES: No authentication token found."
-          );
-          setWorkouts([]);
-          return;
-        }
-
-        const response = await fetch(
-          "http://localhost:5000/api/workouts/history",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        localStorage.removeItem(
+          "fitpulse_user"
         );
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              "Failed to load calorie data."
-          );
-        }
-
-        const history = Array.isArray(data)
-          ? data
-          : Array.isArray(data.workouts)
-          ? data.workouts
-          : [];
-
-        setWorkouts(history);
-
-        // Keep the existing local cache synchronized.
-        localStorage.setItem(
-          "fitpulse_workout_history",
-          JSON.stringify(history)
-        );
-      } catch (error) {
-        console.error(
-          "CALORIES HISTORY ERROR:",
-          error
-        );
-
-        // Fallback to the existing local cache
-        // if the backend is temporarily unavailable.
-        try {
-          const storedHistory = localStorage.getItem(
-            "fitpulse_workout_history"
-          );
-
-          if (!storedHistory) {
-            setWorkouts([]);
-            return;
-          }
-
-          const parsedHistory =
-            JSON.parse(storedHistory);
-
-          setWorkouts(
-            Array.isArray(parsedHistory)
-              ? parsedHistory
-              : []
-          );
-        } catch (cacheError) {
-          console.error(
-            "CALORIES CACHE ERROR:",
-            cacheError
-          );
-
-          setWorkouts([]);
-        }
+        navigate("signin");
+        return;
       }
-    };
 
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Failed to load calorie data."
+        );
+      }
+
+      /*
+        SUPPORT BACKEND RESPONSE
+      */
+      const history = Array.isArray(data)
+        ? data
+        : Array.isArray(data.workouts)
+        ? data.workouts
+        : Array.isArray(data.history)
+        ? data.history
+        : [];
+
+      setWorkouts(history);
+    } catch (error) {
+      console.error(
+        "CALORIES HISTORY ERROR:",
+        error
+      );
+
+      setError(
+        error.message ||
+          "Unable to connect to FITPULSE backend."
+      );
+
+      setWorkouts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+    INITIAL LOAD + WORKOUT UPDATES
+  */
+  useEffect(() => {
     loadHistory();
 
     const handleWorkoutUpdate = () => {
@@ -124,7 +126,7 @@ function Calories({ navigate }) {
         handleWorkoutUpdate
       );
     };
-  }, []);
+  }, [navigate]);
 
   /*
     TODAY
@@ -138,31 +140,59 @@ function Calories({ navigate }) {
   }, []);
 
   /*
+    CHECK COMPLETED WORKOUT
+  */
+  const isCompletedWorkout = (workout) => {
+    if (
+      workout?.status &&
+      String(workout.status).toUpperCase() !==
+        "COMPLETED"
+    ) {
+      return false;
+    }
+
+    return true;
+  };
+
+  /*
+    GET WORKOUT DATE
+  */
+  const getWorkoutDate = (workout) => {
+    const value =
+      workout?.completedAt ||
+      workout?.date ||
+      workout?.createdAt;
+
+    if (!value) {
+      return null;
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+
+    date.setHours(0, 0, 0, 0);
+
+    return date;
+  };
+
+  /*
     TODAY'S WORKOUTS
   */
   const todayWorkouts = useMemo(() => {
     return workouts.filter((workout) => {
-      if (
-        workout.status &&
-        workout.status !== "COMPLETED"
-      ) {
+      if (!isCompletedWorkout(workout)) {
         return false;
       }
 
-      const workoutDate = new Date(
-        workout.completedAt ||
-          workout.date
-      );
+      const workoutDate =
+        getWorkoutDate(workout);
 
-      if (
-        Number.isNaN(
-          workoutDate.getTime()
-        )
-      ) {
+      if (!workoutDate) {
         return false;
       }
-
-      workoutDate.setHours(0, 0, 0, 0);
 
       return (
         workoutDate.getTime() ===
@@ -178,7 +208,7 @@ function Calories({ navigate }) {
     return todayWorkouts.reduce(
       (total, workout) =>
         total +
-        (Number(workout.calories) || 0),
+        (Number(workout?.calories) || 0),
       0
     );
   }, [todayWorkouts]);
@@ -186,44 +216,41 @@ function Calories({ navigate }) {
   /*
     TODAY'S ACTIVE MINUTES
   */
-  const todayActiveMinutes =
-    useMemo(() => {
-      return todayWorkouts.reduce(
-        (total, workout) =>
-          total +
-          (Number(
-            workout.durationMinutes
-          ) || 0),
-        0
-      );
-    }, [todayWorkouts]);
+  const todayActiveMinutes = useMemo(() => {
+    return todayWorkouts.reduce(
+      (total, workout) =>
+        total +
+        (Number(
+          workout?.durationMinutes
+        ) || 0),
+      0
+    );
+  }, [todayWorkouts]);
 
   /*
     DAILY CALORIE TARGET
   */
   const calorieTarget = 2500;
 
-  const calorieProgress =
-    Math.min(
-      100,
-      Math.round(
-        (todayCalories /
-          calorieTarget) *
-          100
-      )
-    );
+  const calorieProgress = Math.min(
+    100,
+    Math.round(
+      (todayCalories /
+        calorieTarget) *
+        100
+    )
+  );
 
   /*
     ACTIVE MINUTE TARGET
   */
   const activeMinuteTarget = 90;
 
-  const remainingMinutes =
-    Math.max(
-      0,
-      activeMinuteTarget -
-        todayActiveMinutes
-    );
+  const remainingMinutes = Math.max(
+    0,
+    activeMinuteTarget -
+      todayActiveMinutes
+  );
 
   /*
     LAST 7 DAYS
@@ -254,33 +281,17 @@ function Calories({ navigate }) {
       const dayWorkouts =
         workouts.filter((workout) => {
           if (
-            workout.status &&
-            workout.status !==
-              "COMPLETED"
+            !isCompletedWorkout(workout)
           ) {
             return false;
           }
 
           const workoutDate =
-            new Date(
-              workout.completedAt ||
-                workout.date
-            );
+            getWorkoutDate(workout);
 
-          if (
-            Number.isNaN(
-              workoutDate.getTime()
-            )
-          ) {
+          if (!workoutDate) {
             return false;
           }
-
-          workoutDate.setHours(
-            0,
-            0,
-            0,
-            0
-          );
 
           return (
             workoutDate.getTime() ===
@@ -293,7 +304,7 @@ function Calories({ navigate }) {
           (total, workout) =>
             total +
             (Number(
-              workout.calories
+              workout?.calories
             ) || 0),
           0
         );
@@ -346,16 +357,55 @@ function Calories({ navigate }) {
   const workoutMinutes =
     todayActiveMinutes;
 
+  /*
+    TODAY'S COMPLETED EXERCISES
+  */
+  const todayExercises =
+    todayWorkouts.reduce(
+      (total, workout) =>
+        total +
+        (Number(
+          workout?.completedExercises
+        ) || 0),
+      0
+    );
+
+  /*
+    LOADING STATE
+  */
+  if (loading) {
+    return (
+      <div className="app-shell">
+        <Sidebar
+          navigate={navigate}
+          active="calories"
+        />
+
+        <main className="calories-main">
+          <div className="settings-loading">
+            LOADING CALORIE DATA...
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
+
       <Sidebar
         navigate={navigate}
         active="calories"
       />
 
       <main className="calories-main">
+
+        {/* HEADER */}
+
         <header className="calories-header">
+
           <div>
+
             <p>
               ENERGY & ACTIVITY MONITOR
             </p>
@@ -368,6 +418,7 @@ function Calories({ navigate }) {
               Monitor your daily energy
               expenditure and movement.
             </span>
+
           </div>
 
           <button
@@ -385,10 +436,25 @@ function Calories({ navigate }) {
               )
               .toUpperCase()}
           </button>
+
         </header>
 
+        {/* ERROR */}
+
+        {error && (
+          <div className="settings-error">
+            {error}
+          </div>
+        )}
+
+        {/* OVERVIEW */}
+
         <section className="calorie-overview">
+
+          {/* CALORIES */}
+
           <div className="calorie-card highlight">
+
             <div className="calorie-icon">
               <Flame size={19} />
             </div>
@@ -406,20 +472,26 @@ function Calories({ navigate }) {
             </small>
 
             <div className="calorie-progress">
+
               <div
                 style={{
                   width: `${calorieProgress}%`,
                 }}
               />
+
             </div>
 
             <p>
               {calorieProgress}% of
               daily target
             </p>
+
           </div>
 
+          {/* SESSIONS */}
+
           <div className="calorie-card">
+
             <div className="calorie-icon">
               <Footprints size={19} />
             </div>
@@ -440,9 +512,13 @@ function Calories({ navigate }) {
               <TrendingUp size={12} />
               Completed today
             </p>
+
           </div>
 
+          {/* WORKOUT CALORIES */}
+
           <div className="calorie-card">
+
             <div className="calorie-icon">
               <HeartPulse size={19} />
             </div>
@@ -462,9 +538,13 @@ function Calories({ navigate }) {
             <p>
               From completed workouts
             </p>
+
           </div>
 
+          {/* ACTIVE MINUTES */}
+
           <div className="calorie-card">
+
             <div className="calorie-icon">
               <Activity size={19} />
             </div>
@@ -486,13 +566,23 @@ function Calories({ navigate }) {
                 ? `${remainingMinutes} mins remaining`
                 : "Daily target reached"}
             </p>
+
           </div>
+
         </section>
 
+        {/* CHART + NUTRITION */}
+
         <section className="calories-grid">
+
+          {/* WEEKLY CALORIE CHART */}
+
           <div className="calories-card activity-chart-card">
+
             <div className="calories-card-heading">
+
               <div>
+
                 <p>
                   ACTIVITY HISTORY
                 </p>
@@ -500,16 +590,20 @@ function Calories({ navigate }) {
                 <h2>
                   WEEKLY CALORIE BURN
                 </h2>
+
               </div>
 
               <span>
                 kcal
               </span>
+
             </div>
 
             <div className="calories-chart">
+
               {activityData.map(
                 (item) => {
+
                   const height =
                     item.calories === 0
                       ? 0
@@ -527,22 +621,27 @@ function Calories({ navigate }) {
                       className="calories-column"
                       key={item.day}
                     >
+
                       <div className="calories-bar-area">
+
                         <div
                           className="calories-bar"
                           style={{
                             height: `${height}%`,
                           }}
                         />
+
                       </div>
 
                       <span>
                         {item.day}
                       </span>
+
                     </div>
                   );
                 }
               )}
+
             </div>
 
             <div
@@ -554,6 +653,7 @@ function Calories({ navigate }) {
               }}
             >
               Weekly total:{" "}
+
               <strong
                 style={{
                   color:
@@ -563,12 +663,19 @@ function Calories({ navigate }) {
                 {weeklyCalories.toLocaleString()}{" "}
                 kcal
               </strong>
+
             </div>
+
           </div>
 
+          {/* NUTRITION */}
+
           <div className="calories-card nutrition-card">
+
             <div className="calories-card-heading">
+
               <div>
+
                 <p>
                   ENERGY BALANCE
                 </p>
@@ -576,10 +683,13 @@ function Calories({ navigate }) {
                 <h2>
                   TODAY'S INTAKE
                 </h2>
+
               </div>
+
             </div>
 
             <div className="intake-number">
+
               <strong>
                 --
               </strong>
@@ -587,9 +697,11 @@ function Calories({ navigate }) {
               <span>
                 kcal
               </span>
+
             </div>
 
             <div className="intake-row">
+
               <span>
                 Protein
               </span>
@@ -597,9 +709,11 @@ function Calories({ navigate }) {
               <strong>
                 --
               </strong>
+
             </div>
 
             <div className="intake-row">
+
               <span>
                 Carbohydrates
               </span>
@@ -607,9 +721,11 @@ function Calories({ navigate }) {
               <strong>
                 --
               </strong>
+
             </div>
 
             <div className="intake-row">
+
               <span>
                 Fats
               </span>
@@ -617,9 +733,11 @@ function Calories({ navigate }) {
               <strong>
                 --
               </strong>
+
             </div>
 
             <div className="energy-balance">
+
               <span>
                 WORKOUT ENERGY EXPENDITURE
               </span>
@@ -628,13 +746,21 @@ function Calories({ navigate }) {
                 {todayCalories.toLocaleString()}{" "}
                 kcal
               </strong>
+
             </div>
+
           </div>
+
         </section>
 
+        {/* ACTIVITY BREAKDOWN */}
+
         <section className="calories-card zones-activity">
+
           <div className="calories-card-heading">
+
             <div>
+
               <p>
                 DAILY ACTIVITY
               </p>
@@ -642,6 +768,7 @@ function Calories({ navigate }) {
               <h2>
                 ACTIVITY BREAKDOWN
               </h2>
+
             </div>
 
             <span>
@@ -655,15 +782,21 @@ function Calories({ navigate }) {
                 )
                 .toUpperCase()}
             </span>
+
           </div>
 
           <div className="activity-breakdown">
+
+            {/* WORKOUT SESSIONS */}
+
             <div className="activity-item">
+
               <div className="activity-item-icon">
                 <Footprints size={17} />
               </div>
 
               <div>
+
                 <span>
                   WORKOUT SESSIONS
                 </span>
@@ -672,20 +805,26 @@ function Calories({ navigate }) {
                   {todayWorkouts.length}{" "}
                   completed
                 </strong>
+
               </div>
 
               <b>
                 {todayCalories.toLocaleString()}{" "}
                 kcal
               </b>
+
             </div>
 
+            {/* WORKOUT TIME */}
+
             <div className="activity-item">
+
               <div className="activity-item-icon">
                 <Activity size={17} />
               </div>
 
               <div>
+
                 <span>
                   WORKOUT
                 </span>
@@ -694,20 +833,26 @@ function Calories({ navigate }) {
                   {workoutMinutes} active
                   mins
                 </strong>
+
               </div>
 
               <b>
                 {workoutCalories.toLocaleString()}{" "}
                 kcal
               </b>
+
             </div>
 
+            {/* TRAINING LOAD */}
+
             <div className="activity-item">
+
               <div className="activity-item-icon">
                 <HeartPulse size={17} />
               </div>
 
               <div>
+
                 <span>
                   TRAINING LOAD
                 </span>
@@ -717,26 +862,22 @@ function Calories({ navigate }) {
                     ? "Active"
                     : "No workout yet"}
                 </strong>
+
               </div>
 
               <b>
-                {todayWorkouts.reduce(
-                  (
-                    total,
-                    workout
-                  ) =>
-                    total +
-                    (Number(
-                      workout.completedExercises
-                    ) || 0),
-                  0
-                )}{" "}
+                {todayExercises}{" "}
                 exercises
               </b>
+
             </div>
+
           </div>
+
         </section>
+
       </main>
+
     </div>
   );
 }

@@ -12,67 +12,125 @@ import Sidebar from "../components/Sidebar";
 
 function WorkoutHistory({ navigate }) {
   const [workouts, setWorkouts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const loadHistory = () => {
-      try {
-        const storedHistory = localStorage.getItem(
-          "fitpulse_workout_history"
-        );
+  /*
+    LOAD WORKOUT HISTORY FROM BACKEND
+  */
+  const loadHistory = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        if (!storedHistory) {
-          setWorkouts([]);
-          return;
-        }
+      const token =
+        localStorage.getItem("fitpulse_token");
 
-        const parsedHistory = JSON.parse(
-          storedHistory
-        );
-
-        if (Array.isArray(parsedHistory)) {
-          setWorkouts(parsedHistory);
-        } else {
-          setWorkouts([]);
-        }
-      } catch (error) {
-        console.error(
-          "WORKOUT HISTORY ERROR:",
-          error
-        );
-
-        setWorkouts([]);
+      if (!token) {
+        navigate("signin");
+        return;
       }
-    };
 
+      const response = await fetch(
+        "http://localhost:5000/api/workouts/history",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      /*
+        EXPIRED / INVALID TOKEN
+      */
+      if (response.status === 401) {
+        localStorage.removeItem(
+          "fitpulse_token"
+        );
+
+        localStorage.removeItem(
+          "fitpulse_user"
+        );
+
+        navigate("signin");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Failed to load workout history."
+        );
+      }
+
+      /*
+        SUPPORT BACKEND RESPONSE
+      */
+      const history = Array.isArray(data)
+        ? data
+        : Array.isArray(data.workouts)
+        ? data.workouts
+        : Array.isArray(data.history)
+        ? data.history
+        : [];
+
+      setWorkouts(history);
+    } catch (error) {
+      console.error(
+        "WORKOUT HISTORY ERROR:",
+        error
+      );
+
+      setError(
+        error.message ||
+          "Unable to connect to FITPULSE backend."
+      );
+
+      setWorkouts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+    INITIAL LOAD + WORKOUT UPDATES
+  */
+  useEffect(() => {
     loadHistory();
+
+    const handleWorkoutUpdate = () => {
+      loadHistory();
+    };
 
     window.addEventListener(
       "fitpulse-workout-history-updated",
-      loadHistory
+      handleWorkoutUpdate
     );
 
     window.addEventListener(
       "storage",
-      loadHistory
+      handleWorkoutUpdate
     );
 
     return () => {
       window.removeEventListener(
         "fitpulse-workout-history-updated",
-        loadHistory
+        handleWorkoutUpdate
       );
 
       window.removeEventListener(
         "storage",
-        loadHistory
+        handleWorkoutUpdate
       );
     };
-  }, []);
+  }, [navigate]);
 
-  /* =====================================================
-     FORMAT DATE
-     ===================================================== */
-
+  /*
+    FORMAT DATE
+  */
   const formatDate = (dateValue) => {
     if (!dateValue) {
       return {
@@ -106,65 +164,114 @@ function WorkoutHistory({ navigate }) {
     };
   };
 
-  /* =====================================================
-     SUMMARY DATA
-     ===================================================== */
-
+  /*
+    SUMMARY DATA
+  */
   const summary = useMemo(() => {
-    const completedWorkouts = workouts.filter(
-      (workout) =>
-        workout.status === "COMPLETED"
-    );
+    const completedWorkouts =
+      workouts.filter(
+        (workout) =>
+          !workout.status ||
+          String(
+            workout.status
+          ).toUpperCase() ===
+            "COMPLETED"
+      );
 
     let totalMinutes = 0;
     let totalCalories = 0;
 
-    completedWorkouts.forEach((workout) => {
-      const duration =
-        Number(workout.durationMinutes) || 0;
+    completedWorkouts.forEach(
+      (workout) => {
+        const duration =
+          Number(
+            workout.durationMinutes
+          ) || 0;
 
-      const calories =
-        Number(workout.calories) || 0;
+        const calories =
+          Number(
+            workout.calories
+          ) || 0;
 
-      totalMinutes += duration;
-      totalCalories += calories;
-    });
+        totalMinutes += duration;
+        totalCalories += calories;
+      }
+    );
 
     const hours = Math.floor(
       totalMinutes / 60
     );
 
-    const minutes = totalMinutes % 60;
+    const minutes =
+      totalMinutes % 60;
 
     return {
-      completed: completedWorkouts.length,
+      completed:
+        completedWorkouts.length,
+
       trainingTime:
         `${hours}h ${minutes}m`,
-      calories: totalCalories.toLocaleString(),
+
+      calories:
+        totalCalories.toLocaleString(),
     };
   }, [workouts]);
 
-  /* =====================================================
-     CALENDAR DATA
-     ===================================================== */
-
+  /*
+    CALENDAR DATA
+  */
   const activeDates = useMemo(() => {
     return workouts
-      .filter(
-        (workout) =>
-          workout.status === "COMPLETED" &&
-          workout.completedAt
-      )
-      .map((workout) => {
-        const date = new Date(
-          workout.completedAt
-        );
+      .filter((workout) => {
+        if (
+          workout.status &&
+          String(
+            workout.status
+          ).toUpperCase() !==
+            "COMPLETED"
+        ) {
+          return false;
+        }
 
-        if (Number.isNaN(date.getTime())) {
+        return Boolean(
+          workout.completedAt ||
+            workout.date ||
+            workout.createdAt
+        );
+      })
+      .map((workout) => {
+        const dateValue =
+          workout.completedAt ||
+          workout.date ||
+          workout.createdAt;
+
+        const date =
+          new Date(dateValue);
+
+        if (
+          Number.isNaN(
+            date.getTime()
+          )
+        ) {
           return "";
         }
 
-        return date.toISOString().split("T")[0];
+        /*
+          Use local calendar date
+          instead of UTC conversion.
+        */
+        const year =
+          date.getFullYear();
+
+        const month = String(
+          date.getMonth() + 1
+        ).padStart(2, "0");
+
+        const day = String(
+          date.getDate()
+        ).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
       })
       .filter(Boolean);
   }, [workouts]);
@@ -190,46 +297,86 @@ function WorkoutHistory({ navigate }) {
   }, []);
 
   const isActiveDate = (date) => {
-    const key = date
-      .toISOString()
-      .split("T")[0];
+    const year =
+      date.getFullYear();
+
+    const month = String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+      date.getDate()
+    ).padStart(2, "0");
+
+    const key =
+      `${year}-${month}-${day}`;
 
     return activeDates.includes(key);
   };
 
-  /* =====================================================
-     OPEN WORKOUT
-     ===================================================== */
-
-  const handleWorkoutClick = (workout) => {
+  /*
+    OPEN WORKOUT
+  */
+  const handleWorkoutClick = (
+    workout
+  ) => {
     try {
       if (workout.plan) {
         localStorage.setItem(
           "fitpulse_selected_plan",
-          JSON.stringify(workout.plan)
+          JSON.stringify(
+            workout.plan
+          )
         );
       }
 
       if (workout.exercise) {
         localStorage.setItem(
           "fitpulse_selected_exercise",
-          JSON.stringify(workout.exercise)
+          JSON.stringify(
+            workout.exercise
+          )
         );
       }
 
-      navigate("workout-tracking");
+      navigate(
+        "workout-tracking"
+      );
     } catch (error) {
       console.error(
         "HISTORY WORKOUT OPEN ERROR:",
         error
       );
 
-      navigate("workout-tracking");
+      navigate(
+        "workout-tracking"
+      );
     }
   };
 
+  /*
+    LOADING STATE
+  */
+  if (loading) {
+    return (
+      <div className="app-shell">
+        <Sidebar
+          navigate={navigate}
+          active="workout-history"
+        />
+
+        <main className="history-main">
+          <div className="settings-loading">
+            LOADING WORKOUT HISTORY...
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
+
       <Sidebar
         navigate={navigate}
         active="workout-history"
@@ -237,13 +384,15 @@ function WorkoutHistory({ navigate }) {
 
       <main className="history-main">
 
-        {/* =================================================
-            HEADER
-            ================================================= */}
+        {/* HEADER */}
 
         <header className="history-header">
+
           <div>
-            <p>TRAINING RECORD</p>
+
+            <p>
+              TRAINING RECORD
+            </p>
 
             <h1>
               WORKOUT HISTORY
@@ -253,6 +402,7 @@ function WorkoutHistory({ navigate }) {
               Review your completed training
               sessions and performance.
             </span>
+
           </div>
 
           <button
@@ -261,16 +411,23 @@ function WorkoutHistory({ navigate }) {
           >
             LAST 30 DAYS
           </button>
+
         </header>
 
+        {/* ERROR */}
 
-        {/* =================================================
-            SUMMARY
-            ================================================= */}
+        {error && (
+          <div className="settings-error">
+            {error}
+          </div>
+        )}
+
+        {/* SUMMARY */}
 
         <section className="history-summary">
 
           <div className="history-summary-card">
+
             <div className="history-summary-icon">
               <Trophy size={18} />
             </div>
@@ -282,10 +439,11 @@ function WorkoutHistory({ navigate }) {
             <strong>
               {summary.completed}
             </strong>
+
           </div>
 
-
           <div className="history-summary-card">
+
             <div className="history-summary-icon">
               <Clock3 size={18} />
             </div>
@@ -297,10 +455,11 @@ function WorkoutHistory({ navigate }) {
             <strong>
               {summary.trainingTime}
             </strong>
+
           </div>
 
-
           <div className="history-summary-card">
+
             <div className="history-summary-icon">
               <Flame size={18} />
             </div>
@@ -312,31 +471,34 @@ function WorkoutHistory({ navigate }) {
             <strong>
               {summary.calories}
             </strong>
+
           </div>
 
         </section>
 
-
-        {/* =================================================
-            RECENT WORKOUTS
-            ================================================= */}
+        {/* RECENT WORKOUTS */}
 
         <section className="history-section">
 
           <div className="history-section-heading">
+
             <div>
-              <p>SESSION LOG</p>
+
+              <p>
+                SESSION LOG
+              </p>
 
               <h2>
                 RECENT WORKOUTS
               </h2>
+
             </div>
 
             <span>
               {workouts.length} SESSIONS
             </span>
-          </div>
 
+          </div>
 
           {workouts.length === 0 ? (
 
@@ -359,11 +521,16 @@ function WorkoutHistory({ navigate }) {
               <button
                 type="button"
                 onClick={() =>
-                  navigate("workout-plans")
+                  navigate(
+                    "workout-plans"
+                  )
                 }
               >
                 BROWSE WORKOUT PLANS
-                <ChevronRight size={15} />
+
+                <ChevronRight
+                  size={15}
+                />
               </button>
 
             </div>
@@ -373,20 +540,26 @@ function WorkoutHistory({ navigate }) {
             <div className="history-list">
 
               {workouts.map(
-                (workout, index) => {
+                (
+                  workout,
+                  index
+                ) => {
 
                   const formattedDate =
                     formatDate(
                       workout.completedAt ||
-                        workout.date
+                        workout.date ||
+                        workout.createdAt
                     );
 
                   return (
                     <div
                       className="history-item"
                       key={
+                        workout._id ||
                         workout.id ||
                         workout.completedAt ||
+                        workout.createdAt ||
                         index
                       }
                     >
@@ -409,7 +582,6 @@ function WorkoutHistory({ navigate }) {
 
                       </div>
 
-
                       {/* WORKOUT */}
 
                       <div className="history-workout">
@@ -426,12 +598,12 @@ function WorkoutHistory({ navigate }) {
                           {
                             workout.title ||
                             workout.name ||
+                            workout.planName ||
                             "Training Session"
                           }
                         </h3>
 
                       </div>
-
 
                       {/* DURATION */}
 
@@ -444,13 +616,13 @@ function WorkoutHistory({ navigate }) {
                         <strong>
                           {workout.duration ||
                             `${
-                              workout.durationMinutes ||
-                              0
+                              Number(
+                                workout.durationMinutes
+                              ) || 0
                             } min`}
                         </strong>
 
                       </div>
-
 
                       {/* CALORIES */}
 
@@ -461,13 +633,14 @@ function WorkoutHistory({ navigate }) {
                         </span>
 
                         <strong>
-                          {workout.calories
+                          {Number(
+                            workout.calories
+                          ) > 0
                             ? `${workout.calories} kcal`
                             : "0 kcal"}
                         </strong>
 
                       </div>
-
 
                       {/* SCORE */}
 
@@ -478,13 +651,12 @@ function WorkoutHistory({ navigate }) {
                         </span>
 
                         <strong>
-                          {workout.score ||
-                            workout.rpe ||
+                          {workout.score ??
+                            workout.rpe ??
                             "--"}
                         </strong>
 
                       </div>
-
 
                       {/* STATUS */}
 
@@ -519,21 +691,18 @@ function WorkoutHistory({ navigate }) {
               )}
 
             </div>
-
           )}
 
         </section>
 
-
-        {/* =================================================
-            TRAINING CALENDAR
-            ================================================= */}
+        {/* TRAINING CALENDAR */}
 
         <section className="history-calendar">
 
           <div className="history-section-heading">
 
             <div>
+
               <p>
                 CONSISTENCY
               </p>
@@ -541,10 +710,10 @@ function WorkoutHistory({ navigate }) {
               <h2>
                 TRAINING CALENDAR
               </h2>
+
             </div>
 
           </div>
-
 
           <div className="calendar-days">
 
@@ -564,14 +733,18 @@ function WorkoutHistory({ navigate }) {
 
           </div>
 
-
           <div className="calendar-grid">
 
             {calendarDays.map(
-              (date, index) => {
+              (
+                date,
+                index
+              ) => {
 
                 const active =
-                  isActiveDate(date);
+                  isActiveDate(
+                    date
+                  );
 
                 return (
                   <div
@@ -584,9 +757,12 @@ function WorkoutHistory({ navigate }) {
                     title={date.toLocaleDateString(
                       "en-US",
                       {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
+                        month:
+                          "short",
+                        day:
+                          "numeric",
+                        year:
+                          "numeric",
                       }
                     )}
                   />
@@ -599,6 +775,7 @@ function WorkoutHistory({ navigate }) {
         </section>
 
       </main>
+
     </div>
   );
 }

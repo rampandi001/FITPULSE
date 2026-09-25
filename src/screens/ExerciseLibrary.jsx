@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Dumbbell,
@@ -12,6 +12,10 @@ function ExerciseLibrary({ navigate }) {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("ALL");
 
+  const [exercises, setExercises] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const filters = [
     "ALL",
     "CHEST",
@@ -21,122 +25,158 @@ function ExerciseLibrary({ navigate }) {
     "ARMS",
   ];
 
-  const exercises = [
-    {
-      id: 1,
-      name: "Barbell Bench Press",
-      category: "CHEST",
-      level: "INTERMEDIATE",
-      equipment: "BARBELL",
-      image: "/images/bench-press.jpg",
-    },
-    {
-      id: 2,
-      name: "Dumbbell Incline Press",
-      category: "CHEST",
-      level: "INTERMEDIATE",
-      equipment: "DUMBBELLS",
-      image: "/images/incline-press.jpg",
-    },
-    {
-      id: 3,
-      name: "Weighted Dips",
-      category: "CHEST",
-      level: "INTERMEDIATE",
-      equipment: "DIP BARS",
-      image: "/images/dips.jpg",
-    },
-    {
-      id: 4,
-      name: "Barbell Squat",
-      category: "LEGS",
-      level: "INTERMEDIATE",
-      equipment: "BARBELL",
-      image: "/images/squat.jpg",
-    },
-    {
-      id: 5,
-      name: "Conventional Deadlift",
-      category: "BACK",
-      level: "ADVANCED",
-      equipment: "BARBELL",
-      image: "/images/deadlift.jpg",
-    },
-    {
-      id: 6,
-      name: "Pull Ups",
-      category: "BACK",
-      level: "INTERMEDIATE",
-      equipment: "BODYWEIGHT",
-      image: "/images/pull-up.jpg",
-    },
-    {
-      id: 7,
-      name: "Barbell Row",
-      category: "BACK",
-      level: "INTERMEDIATE",
-      equipment: "BARBELL",
-      image: "/images/barbell-row.jpg",
-    },
-    {
-      id: 8,
-      name: "Dumbbell Shoulder Press",
-      category: "SHOULDERS",
-      level: "INTERMEDIATE",
-      equipment: "DUMBBELLS",
-      image: "/images/shoulder-press.jpg",
-    },
-    {
-      id: 9,
-      name: "Barbell Bicep Curl",
-      category: "ARMS",
-      level: "BEGINNER",
-      equipment: "BARBELL",
-      image: "/images/bicep-curl.jpg",
-    },
-    {
-      id: 10,
-      name: "Tricep Pushdown",
-      category: "ARMS",
-      level: "BEGINNER",
-      equipment: "CABLE",
-      image: "/images/tricep-pushdown.jpg",
-    },
-    {
-      id: 11,
-      name: "Leg Press",
-      category: "LEGS",
-      level: "INTERMEDIATE",
-      equipment: "MACHINE",
-      image: "/images/leg-press.jpg",
-    },
-    {
-      id: 12,
-      name: "Dumbbell Lunges",
-      category: "LEGS",
-      level: "BEGINNER",
-      equipment: "DUMBBELLS",
-      image: "/images/lunges.jpg",
-    },
-  ];
+  // ----------------------------------------
+  // LOAD EXERCISES FROM BACKEND
+  // ----------------------------------------
+
+  useEffect(() => {
+    const loadExercises = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const token =
+          localStorage.getItem("fitpulse_token");
+
+        if (!token) {
+          navigate("signin");
+          return;
+        }
+
+        const response = await fetch(
+          "http://localhost:5000/api/exercises",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        // ----------------------------------------
+        // AUTHENTICATION ERROR
+        // ----------------------------------------
+
+        if (response.status === 401) {
+          localStorage.removeItem(
+            "fitpulse_token"
+          );
+
+          localStorage.removeItem(
+            "fitpulse_user"
+          );
+
+          navigate("signin");
+          return;
+        }
+
+        // ----------------------------------------
+        // BACKEND ERROR
+        // ----------------------------------------
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Failed to load exercises."
+          );
+        }
+
+        // ----------------------------------------
+        // HANDLE RESPONSE
+        // ----------------------------------------
+
+        const exerciseData =
+          Array.isArray(data)
+            ? data
+            : Array.isArray(data.exercises)
+            ? data.exercises
+            : [];
+
+        setExercises(exerciseData);
+      } catch (err) {
+        console.error(
+          "EXERCISE LIBRARY LOAD ERROR:",
+          err
+        );
+
+        setError(
+          err.message ||
+            "Unable to connect to FITPULSE backend."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExercises();
+  }, [navigate]);
+
+  // ----------------------------------------
+  // FILTER + SEARCH
+  // ----------------------------------------
 
   const filteredExercises = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = search
+      .trim()
+      .toLowerCase();
 
     return exercises.filter((exercise) => {
+      const name =
+        exercise?.name?.toLowerCase() || "";
+
+      const category =
+        exercise?.category?.toLowerCase() || "";
+
+      const equipment =
+        exercise?.equipment?.toLowerCase() || "";
+
       const matchesFilter =
         activeFilter === "ALL" ||
         exercise.category === activeFilter;
 
       const matchesSearch =
         !query ||
-        exercise.name.toLowerCase().includes(query) ||
-        exercise.category.toLowerCase().includes(query) ||
-        exercise.equipment.toLowerCase().includes(query);
+        name.includes(query) ||
+        category.includes(query) ||
+        equipment.includes(query);
 
-      return matchesFilter && matchesSearch;
+      return (
+        matchesFilter &&
+        matchesSearch
+      );
     });
-  }, [search, activeFilter]);
+  }, [
+    exercises,
+    search,
+    activeFilter,
+  ]);
+
+  // ----------------------------------------
+  // LOADING STATE
+  // ----------------------------------------
+
+  if (loading) {
+    return (
+      <div className="app-shell">
+        <Sidebar
+          navigate={navigate}
+          active="exercise-library"
+        />
+
+        <main className="exercise-library-main">
+          <div className="settings-loading">
+            LOADING EXERCISE LIBRARY...
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ----------------------------------------
+  // PAGE
+  // ----------------------------------------
 
   return (
     <div className="app-shell">
@@ -147,6 +187,7 @@ function ExerciseLibrary({ navigate }) {
 
       <main className="exercise-library-main">
         {/* HEADER */}
+
         <header className="exercise-library-header">
           <div>
             <p className="exercise-library-kicker">
@@ -158,18 +199,31 @@ function ExerciseLibrary({ navigate }) {
             </h1>
 
             <p className="exercise-library-description">
-              Explore movements, training techniques and
-              exercises built for your performance goals.
+              Explore movements, training
+              techniques and exercises built
+              for your performance goals.
             </p>
           </div>
 
           <div className="exercise-library-count">
-            <strong>{filteredExercises.length}</strong>
+            <strong>
+              {filteredExercises.length}
+            </strong>
+
             <span>EXERCISES</span>
           </div>
         </header>
 
+        {/* ERROR */}
+
+        {error && (
+          <div className="settings-error">
+            {error}
+          </div>
+        )}
+
         {/* SEARCH */}
+
         <section className="exercise-library-toolbar">
           <div className="exercise-search">
             <Search size={16} />
@@ -178,7 +232,9 @@ function ExerciseLibrary({ navigate }) {
               type="text"
               placeholder="Search exercises..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
             />
           </div>
 
@@ -191,7 +247,9 @@ function ExerciseLibrary({ navigate }) {
                     ? "exercise-filter active"
                     : "exercise-filter"
                 }
-                onClick={() => setActiveFilter(filter)}
+                onClick={() =>
+                  setActiveFilter(filter)
+                }
               >
                 {filter}
               </button>
@@ -200,69 +258,98 @@ function ExerciseLibrary({ navigate }) {
         </section>
 
         {/* EXERCISE GRID */}
+
         <section className="exercise-library-grid">
-          {filteredExercises.map((exercise) => (
-            <article
-              className="exercise-library-card"
-              key={exercise.id}
-            >
-              <div className="exercise-card-image">
-                <img
-                  src={exercise.image}
-                  alt={exercise.name}
-                />
+          {filteredExercises.map(
+            (exercise, index) => (
+              <article
+                className="exercise-library-card"
+                key={exercise._id}
+              >
+                <div className="exercise-card-image">
+                  <img
+                    src={exercise.image}
+                    alt={exercise.name}
+                  />
 
-                <div className="exercise-card-image-overlay" />
+                  <div className="exercise-card-image-overlay" />
 
-                <div className="exercise-card-number">
-                  {String(exercise.id).padStart(2, "0")}
-                </div>
-
-                <div className="exercise-card-category">
-                  {exercise.category}
-                </div>
-              </div>
-
-              <div className="exercise-card-content">
-                <div className="exercise-card-top">
-                  <div>
-                    <p>STRENGTH MOVEMENT</p>
-
-                    <h2>{exercise.name}</h2>
+                  <div className="exercise-card-number">
+                    {String(index + 1).padStart(
+                      2,
+                      "0"
+                    )}
                   </div>
 
-                  <Dumbbell size={17} />
+                  <div className="exercise-card-category">
+                    {exercise.category}
+                  </div>
                 </div>
 
-                <div className="exercise-card-meta">
-                  <span>{exercise.level}</span>
-                  <span>{exercise.equipment}</span>
-                </div>
+                <div className="exercise-card-content">
+                  <div className="exercise-card-top">
+                    <div>
+                      <p>
+                        STRENGTH MOVEMENT
+                      </p>
 
-                <button
-                  className="exercise-card-button"
-                  onClick={() =>
-                    navigate("exercise-details")
-                  }
-                >
-                  VIEW EXERCISE
-                  <ArrowRight size={15} />
-                </button>
-              </div>
-            </article>
-          ))}
+                      <h2>
+                        {exercise.name}
+                      </h2>
+                    </div>
+
+                    <Dumbbell size={17} />
+                  </div>
+
+                  <div className="exercise-card-meta">
+                    <span>
+                      {exercise.level}
+                    </span>
+
+                    <span>
+                      {exercise.equipment}
+                    </span>
+                  </div>
+
+                  <button
+                    className="exercise-card-button"
+                    onClick={() => {
+                      localStorage.setItem(
+                        "fitpulse_selected_exercise",
+                        JSON.stringify(
+                          exercise
+                        )
+                      );
+
+                      navigate(
+                        "exercise-details"
+                      );
+                    }}
+                  >
+                    VIEW EXERCISE
+
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+              </article>
+            )
+          )}
         </section>
 
         {/* EMPTY STATE */}
+
         {filteredExercises.length === 0 && (
           <div className="exercise-empty-state">
             <Target size={28} />
 
-            <h2>NO EXERCISES FOUND</h2>
+            <h2>
+              NO EXERCISES FOUND
+            </h2>
 
             <p>
-              Try another exercise name or select a
-              different muscle group.
+              {error
+                ? "Unable to load exercises from the backend."
+                : "Try another exercise name or select a different muscle group."}
             </p>
 
             <button

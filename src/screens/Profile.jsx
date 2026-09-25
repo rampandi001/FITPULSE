@@ -32,17 +32,19 @@ function Profile({ navigate }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // LOAD PROFILE
   useEffect(() => {
     const loadProfile = async () => {
+      const token = localStorage.getItem("fitpulse_token");
+
+      if (!token) {
+        navigate("signin");
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
       try {
-        const token = localStorage.getItem("fitpulse_token");
-
-        if (!token) {
-          navigate("signin");
-          return;
-        }
-
         const response = await fetch(
           "http://localhost:5000/api/profile",
           {
@@ -55,25 +57,33 @@ function Profile({ navigate }) {
 
         const data = await response.json();
 
-        if (!response.ok) {
-          setError(data.message || "Failed to load profile.");
+        if (response.status === 401) {
+          localStorage.removeItem("fitpulse_token");
+          localStorage.removeItem("fitpulse_user");
+          navigate("signin");
           return;
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load profile."
+          );
         }
 
         const loadedProfile = {
           name: data.name || "",
           email: data.email || "",
           profilePicture: data.profilePicture || "",
-          height: data.height || "",
-          targetWeight: data.targetWeight || "",
+          height: data.height ?? "",
+          targetWeight: data.targetWeight ?? "",
           trainingFocus: data.trainingFocus || "",
-          frequencyPreference: data.frequencyPreference || "",
+          frequencyPreference:
+            data.frequencyPreference || "",
           fitnessGoal: data.fitnessGoal || "",
         };
 
         setProfile(loadedProfile);
 
-        // Keep localStorage updated
         const existingUser = JSON.parse(
           localStorage.getItem("fitpulse_user") || "{}"
         );
@@ -91,8 +101,14 @@ function Profile({ navigate }) {
           new Event("fitpulse-user-updated")
         );
       } catch (err) {
-        console.error(err);
-        setError("Unable to connect to backend.");
+        console.error(
+          "PROFILE LOAD ERROR:",
+          err
+        );
+
+        setError(
+          err.message || "Unable to connect to backend."
+        );
       } finally {
         setLoading(false);
       }
@@ -101,7 +117,6 @@ function Profile({ navigate }) {
     loadProfile();
   }, [navigate]);
 
-  // HANDLE INPUT
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -114,7 +129,6 @@ function Profile({ navigate }) {
     setError("");
   };
 
-  // PROFILE PICTURE
   const handleProfilePicture = (e) => {
     const file = e.target.files?.[0];
 
@@ -162,6 +176,11 @@ function Profile({ navigate }) {
 
         const context = canvas.getContext("2d");
 
+        if (!context) {
+          setError("Unable to process the selected image.");
+          return;
+        }
+
         context.drawImage(
           image,
           0,
@@ -184,29 +203,31 @@ function Profile({ navigate }) {
         setError("");
       };
 
+      image.onerror = () => {
+        setError("Unable to read the selected image.");
+      };
+
       image.src = reader.result;
     };
 
     reader.readAsDataURL(file);
 
-    // Allow selecting same image again
     e.target.value = "";
   };
 
-  // SAVE PROFILE
   const handleSave = async () => {
+    const token = localStorage.getItem("fitpulse_token");
+
+    if (!token) {
+      navigate("signin");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+
     try {
-      setSaving(true);
-      setMessage("");
-      setError("");
-
-      const token = localStorage.getItem("fitpulse_token");
-
-      if (!token) {
-        navigate("signin");
-        return;
-      }
-
       const response = await fetch(
         "http://localhost:5000/api/profile",
         {
@@ -218,10 +239,17 @@ function Profile({ navigate }) {
           body: JSON.stringify({
             name: profile.name,
             profilePicture: profile.profilePicture,
-            height: Number(profile.height),
-            targetWeight: Number(profile.targetWeight),
+            height:
+              profile.height === ""
+                ? undefined
+                : Number(profile.height),
+            targetWeight:
+              profile.targetWeight === ""
+                ? undefined
+                : Number(profile.targetWeight),
             trainingFocus: profile.trainingFocus,
-            frequencyPreference: profile.frequencyPreference,
+            frequencyPreference:
+              profile.frequencyPreference,
             fitnessGoal: profile.fitnessGoal,
           }),
         }
@@ -229,52 +257,58 @@ function Profile({ navigate }) {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        setError(
-          data.message || "Failed to update profile."
-        );
+      if (response.status === 401) {
+        localStorage.removeItem("fitpulse_token");
+        localStorage.removeItem("fitpulse_user");
+        navigate("signin");
         return;
       }
 
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to update profile."
+        );
+      }
+
+      const user = data.user || {};
+
       const updatedProfile = {
-        name: data.user.name || "",
-        email: data.user.email || "",
-        profilePicture:
-          data.user.profilePicture || "",
-        height: data.user.height || "",
-        targetWeight:
-          data.user.targetWeight || "",
-        trainingFocus:
-          data.user.trainingFocus || "",
+        name: user.name || "",
+        email: user.email || "",
+        profilePicture: user.profilePicture || "",
+        height: user.height ?? "",
+        targetWeight: user.targetWeight ?? "",
+        trainingFocus: user.trainingFocus || "",
         frequencyPreference:
-          data.user.frequencyPreference || "",
-        fitnessGoal:
-          data.user.fitnessGoal || "",
+          user.frequencyPreference || "",
+        fitnessGoal: user.fitnessGoal || "",
       };
 
       setProfile(updatedProfile);
 
-      // Update localStorage
       localStorage.setItem(
         "fitpulse_user",
         JSON.stringify({
-          id: data.user.id,
+          id: user.id || user._id,
           ...updatedProfile,
         })
       );
 
-      // Tell Sidebar to refresh
       window.dispatchEvent(
         new Event("fitpulse-user-updated")
       );
 
       setEditMode(false);
-      setMessage(
-        "Profile updated successfully."
-      );
+      setMessage("Profile updated successfully.");
     } catch (err) {
-      console.error(err);
-      setError("Unable to connect to backend.");
+      console.error(
+        "PROFILE SAVE ERROR:",
+        err
+      );
+
+      setError(
+        err.message || "Unable to connect to backend."
+      );
     } finally {
       setSaving(false);
     }
@@ -305,10 +339,10 @@ function Profile({ navigate }) {
       />
 
       <main className="profile-main">
-
         {/* HEADER */}
         <header className="profile-header">
           <button
+            type="button"
             className="profile-back-button"
             onClick={() => navigate("dashboard")}
           >
@@ -317,12 +351,14 @@ function Profile({ navigate }) {
           </button>
 
           <button
+            type="button"
             className="profile-edit-button"
             onClick={() => {
               setEditMode(!editMode);
               setMessage("");
               setError("");
             }}
+            disabled={saving}
           >
             <Edit3 size={15} />
 
@@ -363,12 +399,9 @@ function Profile({ navigate }) {
 
         {/* PROFILE GRID */}
         <section className="profile-grid">
-
           {/* PROFILE CARD */}
           <div className="profile-card profile-main-card">
-
             <div className="profile-avatar-large">
-
               {profile.profilePicture ? (
                 <img
                   src={profile.profilePicture}
@@ -421,7 +454,6 @@ function Profile({ navigate }) {
 
           {/* PERSONAL INFORMATION */}
           <div className="profile-card">
-
             <div className="profile-card-heading">
               <div>
                 <p>PERSONAL INFORMATION</p>
@@ -430,7 +462,6 @@ function Profile({ navigate }) {
             </div>
 
             <div className="profile-form-grid">
-
               <label>
                 <span>FULL NAME</span>
 
@@ -439,7 +470,7 @@ function Profile({ navigate }) {
                   name="name"
                   value={profile.name}
                   onChange={handleChange}
-                  disabled={!editMode}
+                  disabled={!editMode || saving}
                 />
               </label>
 
@@ -457,17 +488,16 @@ function Profile({ navigate }) {
                 <span>HEIGHT</span>
 
                 <div className="profile-input-unit">
-
                   <input
                     type="number"
                     name="height"
                     value={profile.height}
                     onChange={handleChange}
-                    disabled={!editMode}
+                    disabled={!editMode || saving}
+                    min="0"
                   />
 
                   <small>CM</small>
-
                 </div>
               </label>
 
@@ -475,26 +505,23 @@ function Profile({ navigate }) {
                 <span>TARGET WEIGHT</span>
 
                 <div className="profile-input-unit">
-
                   <input
                     type="number"
                     name="targetWeight"
                     value={profile.targetWeight}
                     onChange={handleChange}
-                    disabled={!editMode}
+                    disabled={!editMode || saving}
+                    min="0"
                   />
 
                   <small>KG</small>
-
                 </div>
               </label>
-
             </div>
           </div>
 
           {/* TRAINING PROFILE */}
           <div className="profile-card profile-preferences-card">
-
             <div className="profile-card-heading">
               <div>
                 <p>TRAINING PROFILE</p>
@@ -503,7 +530,6 @@ function Profile({ navigate }) {
             </div>
 
             <div className="profile-form-grid">
-
               <label>
                 <span>TRAINING FOCUS</span>
 
@@ -512,7 +538,7 @@ function Profile({ navigate }) {
                   name="trainingFocus"
                   value={profile.trainingFocus}
                   onChange={handleChange}
-                  disabled={!editMode}
+                  disabled={!editMode || saving}
                 />
               </label>
 
@@ -524,7 +550,7 @@ function Profile({ navigate }) {
                   name="frequencyPreference"
                   value={profile.frequencyPreference}
                   onChange={handleChange}
-                  disabled={!editMode}
+                  disabled={!editMode || saving}
                 />
               </label>
 
@@ -536,20 +562,18 @@ function Profile({ navigate }) {
                   name="fitnessGoal"
                   value={profile.fitnessGoal}
                   onChange={handleChange}
-                  disabled={!editMode}
+                  disabled={!editMode || saving}
                 />
               </label>
-
             </div>
           </div>
-
         </section>
 
         {/* SAVE */}
         {editMode && (
           <div className="profile-save-area">
-
             <button
+              type="button"
               className="profile-save-button"
               onClick={handleSave}
               disabled={saving}
@@ -560,10 +584,8 @@ function Profile({ navigate }) {
                 ? "SAVING..."
                 : "SAVE PROFILE"}
             </button>
-
           </div>
         )}
-
       </main>
     </div>
   );

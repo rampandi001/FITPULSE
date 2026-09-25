@@ -1,27 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Sidebar from "../components/Sidebar";
 
 function Dashboard({ navigate }) {
   const [user, setUser] = useState(null);
+  const [workouts, setWorkouts] = useState([]);
 
-  const weeklyLoad = [
-    { day: "Mon", value: 90, active: true },
-    { day: "Tue", value: 52 },
-    { day: "Wed", value: 68 },
-    { day: "Thu", value: 38 },
-    { day: "Fri", value: 78 },
-    { day: "Sat", value: 44 },
-    { day: "Sun", value: 61 },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // ----------------------------------------
-  // LOAD LOGGED-IN USER
+  // LOAD USER + WORKOUT HISTORY
   // ----------------------------------------
 
   useEffect(() => {
-    const loadUser = () => {
+    const loadDashboardData = async () => {
       try {
+        setLoading(true);
+        setError("");
+
         const token = localStorage.getItem("fitpulse_token");
 
         if (!token) {
@@ -29,25 +26,104 @@ function Dashboard({ navigate }) {
           return;
         }
 
+        // ----------------------------------------
+        // LOAD USER
+        // ----------------------------------------
+
         const storedUser =
           localStorage.getItem("fitpulse_user");
 
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (userError) {
+            console.error(
+              "DASHBOARD USER PARSE ERROR:",
+              userError
+            );
+          }
         }
-      } catch (error) {
-        console.error(
-          "DASHBOARD USER ERROR:",
-          error
+
+        // ----------------------------------------
+        // LOAD WORKOUT HISTORY
+        // ----------------------------------------
+
+        const response = await fetch(
+          "http://localhost:5000/api/workouts/history",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+          localStorage.removeItem("fitpulse_token");
+          localStorage.removeItem("fitpulse_user");
+
+          navigate("signin");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Failed to load workout history."
+          );
+        }
+
+        // ----------------------------------------
+        // HANDLE DIFFERENT BACKEND RESPONSE SHAPES
+        // ----------------------------------------
+
+        const workoutData =
+          Array.isArray(data)
+            ? data
+            : Array.isArray(data.workouts)
+            ? data.workouts
+            : Array.isArray(data.history)
+            ? data.history
+            : [];
+
+        setWorkouts(workoutData);
+      } catch (err) {
+        console.error(
+          "DASHBOARD LOAD ERROR:",
+          err
+        );
+
+        setError(
+          err.message ||
+            "Unable to connect to FITPULSE backend."
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadUser();
+    loadDashboardData();
 
-    // Update dashboard when profile changes
+    // ----------------------------------------
+    // UPDATE DASHBOARD WHEN PROFILE CHANGES
+    // ----------------------------------------
+
     const handleUserUpdate = () => {
-      loadUser();
+      const storedUser =
+        localStorage.getItem("fitpulse_user");
+
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error(
+            "DASHBOARD USER UPDATE ERROR:",
+            error
+          );
+        }
+      }
     };
 
     window.addEventListener(
@@ -93,6 +169,245 @@ function Dashboard({ navigate }) {
 
   const userName = user?.name || "Athlete";
 
+  // ----------------------------------------
+  // NORMALIZE WORKOUT DATE
+  // ----------------------------------------
+
+  const getWorkoutDate = (workout) => {
+    const date =
+      workout?.completedAt ||
+      workout?.createdAt;
+
+    if (!date) {
+      return null;
+    }
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return null;
+    }
+
+    return parsedDate;
+  };
+
+  // ----------------------------------------
+  // TODAY'S WORKOUTS
+  // ----------------------------------------
+
+  const todaysWorkouts = useMemo(() => {
+    const currentDate = new Date();
+
+    return workouts.filter((workout) => {
+      const workoutDate =
+        getWorkoutDate(workout);
+
+      if (!workoutDate) {
+        return false;
+      }
+
+      return (
+        workoutDate.getFullYear() ===
+          currentDate.getFullYear() &&
+        workoutDate.getMonth() ===
+          currentDate.getMonth() &&
+        workoutDate.getDate() ===
+          currentDate.getDate()
+      );
+    });
+  }, [workouts]);
+
+  // ----------------------------------------
+  // TOTAL CALORIES
+  // ----------------------------------------
+
+  const totalCalories = useMemo(() => {
+    return workouts.reduce((total, workout) => {
+      const calories =
+        Number(workout?.calories) || 0;
+
+      return total + calories;
+    }, 0);
+  }, [workouts]);
+
+  // ----------------------------------------
+  // TOTAL WORKOUTS
+  // ----------------------------------------
+
+  const totalWorkouts = workouts.length;
+
+  // ----------------------------------------
+  // ACTIVE ZONE TIME
+  //
+  // Using durationMinutes because actual
+  // wearable zone-time data is not currently
+  // available in the Workout model.
+  // ----------------------------------------
+
+  const activeZoneTime = useMemo(() => {
+    return workouts.reduce((total, workout) => {
+      const duration =
+        Number(workout?.durationMinutes) || 0;
+
+      return total + duration;
+    }, 0);
+  }, [workouts]);
+
+  // ----------------------------------------
+  // WEEKLY LOAD
+  // ----------------------------------------
+
+  const weeklyLoad = useMemo(() => {
+    const now = new Date();
+
+    const days = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+
+      date.setHours(0, 0, 0, 0);
+
+      date.setDate(
+        now.getDate() - i
+      );
+
+      days.push(date);
+    }
+
+    const dayNames = days.map((date) =>
+      date.toLocaleDateString("en-US", {
+        weekday: "short",
+      })
+    );
+
+    const rawValues = days.map((day) => {
+      return workouts.reduce(
+        (total, workout) => {
+          const workoutDate =
+            getWorkoutDate(workout);
+
+          if (!workoutDate) {
+            return total;
+          }
+
+          const sameDay =
+            workoutDate.getFullYear() ===
+              day.getFullYear() &&
+            workoutDate.getMonth() ===
+              day.getMonth() &&
+            workoutDate.getDate() ===
+              day.getDate();
+
+          if (!sameDay) {
+            return total;
+          }
+
+          const duration =
+            Number(
+              workout?.durationMinutes
+            ) || 0;
+
+          const calories =
+            Number(workout?.calories) || 0;
+
+          const score =
+            Number(workout?.score) || 0;
+
+          // Combine available workout metrics
+          // to create a relative daily load.
+          return (
+            total +
+            duration +
+            calories / 20 +
+            score / 2
+          );
+        },
+        0
+      );
+    });
+
+    const maxValue =
+      Math.max(...rawValues, 1);
+
+    return days.map((date, index) => ({
+      day: dayNames[index],
+      value:
+        rawValues[index] > 0
+          ? Math.max(
+              8,
+              Math.round(
+                (rawValues[index] /
+                  maxValue) *
+                  100
+              )
+            )
+          : 4,
+      active:
+        date.toDateString() ===
+        now.toDateString(),
+    }));
+  }, [workouts]);
+
+  // ----------------------------------------
+  // TODAY'S FOCUS
+  // ----------------------------------------
+
+  const todayWorkout =
+    todaysWorkouts.length > 0
+      ? todaysWorkouts[0]
+      : null;
+
+  const focusTitle =
+    todayWorkout?.title ||
+    todayWorkout?.planName ||
+    "NO ACTIVE WORKOUT";
+
+  const focusType =
+    todayWorkout?.type ||
+    todayWorkout?.category ||
+    "WORKOUT";
+
+  const focusRpe =
+    todayWorkout?.rpe !== undefined &&
+    todayWorkout?.rpe !== null
+      ? todayWorkout.rpe
+      : "—";
+
+  const completedExercises =
+    Number(
+      todayWorkout?.completedExercises
+    ) || 0;
+
+  const totalExercises =
+    Number(
+      todayWorkout?.totalExercises
+    ) || 0;
+
+  // ----------------------------------------
+  // LOADING STATE
+  // ----------------------------------------
+
+  if (loading) {
+    return (
+      <div className="app-shell">
+        <Sidebar
+          navigate={navigate}
+          active="dashboard"
+        />
+
+        <main className="dashboard-main">
+          <div className="settings-loading">
+            LOADING DASHBOARD...
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ----------------------------------------
+  // DASHBOARD
+  // ----------------------------------------
+
   return (
     <div className="app-shell">
 
@@ -130,20 +445,30 @@ function Dashboard({ navigate }) {
 
         </header>
 
+        {/* ERROR */}
+
+        {error && (
+          <div className="settings-error">
+            {error}
+          </div>
+        )}
+
         {/* METRICS */}
 
         <section className="metric-grid">
 
+          {/* CALORIES */}
+
           <div className="metric-card selected">
 
             <span>
-              Target Caloric Out
+              Total Calories Burned
             </span>
 
             <div>
 
               <strong>
-                3,250
+                {totalCalories.toLocaleString()}
               </strong>
 
               <small>
@@ -154,6 +479,8 @@ function Dashboard({ navigate }) {
 
           </div>
 
+          {/* HEART RATE */}
+
           <div className="metric-card">
 
             <span>
@@ -163,7 +490,7 @@ function Dashboard({ navigate }) {
             <div>
 
               <strong>
-                142
+                —
               </strong>
 
               <small>
@@ -174,6 +501,8 @@ function Dashboard({ navigate }) {
 
           </div>
 
+          {/* ACTIVE TIME */}
+
           <div className="metric-card">
 
             <span>
@@ -183,7 +512,7 @@ function Dashboard({ navigate }) {
             <div>
 
               <strong>
-                45
+                {activeZoneTime}
               </strong>
 
               <small>
@@ -259,43 +588,68 @@ function Dashboard({ navigate }) {
               </h2>
 
               <span>
-                RPE Target: 8.5
+                RPE Target: {focusRpe}
               </span>
 
             </div>
 
             <div className="focus-tag">
-              UPPER PUSH POWER
+              {focusType}
             </div>
 
             <div className="exercise-list">
 
-              <div>
+              {todayWorkout ? (
+                <>
+                  <div>
+                    <span>•</span>
 
-                <span>•</span>
+                    {focusTitle}
+                  </div>
 
-                Barbell Bench Press
-                (5 x 5)
+                  <div>
+                    <span>•</span>
 
-              </div>
+                    Exercises Completed:{" "}
+                    {completedExercises}
+                    {totalExercises > 0
+                      ? ` / ${totalExercises}`
+                      : ""}
+                  </div>
 
-              <div>
+                  <div>
+                    <span>•</span>
 
-                <span>•</span>
+                    Duration:{" "}
+                    {Number(
+                      todayWorkout.durationMinutes
+                    ) || 0}{" "}
+                    mins
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <span>•</span>
 
-                Dumbbell Incline Press
-                (4 x 8)
+                    No workout completed today.
+                  </div>
 
-              </div>
+                  <div>
+                    <span>•</span>
 
-              <div>
+                    Start a workout to track
+                    today's performance.
+                  </div>
 
-                <span>•</span>
+                  <div>
+                    <span>•</span>
 
-                Weighted Dips
-                (3 x max reps)
-
-              </div>
+                    Your completed workout data
+                    will appear here.
+                  </div>
+                </>
+              )}
 
             </div>
 

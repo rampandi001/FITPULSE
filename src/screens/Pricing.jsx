@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
 import {
-  ArrowLeft,
   Check,
   CheckCircle2,
   Crown,
@@ -60,37 +59,113 @@ function Pricing({ navigate }) {
     },
   ];
 
-  const [currentPlan, setCurrentPlan] =
-    useState("CORE");
+  const [currentPlan, setCurrentPlan] = useState("CORE");
+  const [subscriptionStatus, setSubscriptionStatus] =
+    useState("ACTIVE");
 
-  const [paymentPlan, setPaymentPlan] =
-    useState(null);
-
+  const [paymentPlan, setPaymentPlan] = useState(null);
   const [paymentMethod, setPaymentMethod] =
     useState("UPI");
-
   const [paymentStep, setPaymentStep] =
     useState("method");
-
   const [processing, setProcessing] =
     useState(false);
 
-  useEffect(() => {
-    try {
-      const savedPlan =
-        localStorage.getItem(
-          "fitpulse_subscription"
-        );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-      if (savedPlan) {
-        setCurrentPlan(savedPlan);
+  const getToken = () =>
+    localStorage.getItem("fitpulse_token");
+
+  const handleUnauthorized = () => {
+    localStorage.removeItem("fitpulse_token");
+    localStorage.removeItem("fitpulse_user");
+
+    navigate("signin");
+  };
+
+  const loadSubscription = async () => {
+    const token = getToken();
+
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        "http://localhost:5000/api/subscription",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
       }
-    } catch (error) {
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Failed to load subscription."
+        );
+      }
+
+      const subscription =
+        data.subscription || data;
+
+      const plan =
+        subscription.plan ||
+        subscription.currentPlan ||
+        "CORE";
+
+      setCurrentPlan(plan);
+
+      setSubscriptionStatus(
+        subscription.status || "ACTIVE"
+      );
+    } catch (err) {
       console.error(
         "SUBSCRIPTION LOAD ERROR:",
-        error
+        err
       );
+
+      setError(
+        err.message ||
+          "Unable to load subscription."
+      );
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadSubscription();
+
+    const handleSubscriptionUpdate = () => {
+      loadSubscription();
+    };
+
+    window.addEventListener(
+      "fitpulse-subscription-updated",
+      handleSubscriptionUpdate
+    );
+
+    return () => {
+      window.removeEventListener(
+        "fitpulse-subscription-updated",
+        handleSubscriptionUpdate
+      );
+    };
   }, []);
 
   const openPayment = (plan) => {
@@ -106,6 +181,7 @@ function Pricing({ navigate }) {
     setPaymentMethod("UPI");
     setPaymentStep("method");
     setProcessing(false);
+    setError("");
   };
 
   const closePayment = () => {
@@ -114,63 +190,132 @@ function Pricing({ navigate }) {
     }
 
     setPaymentPlan(null);
+    setError("");
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!paymentPlan) {
       return;
     }
 
-    setProcessing(true);
-    setPaymentStep("processing");
+    const token = getToken();
 
-    setTimeout(() => {
-      try {
-        localStorage.setItem(
-          "fitpulse_subscription",
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      setPaymentStep("processing");
+      setError("");
+
+      /*
+       * TEMPORARY BACKEND SUBSCRIPTION ACTIVATION
+       *
+       * Real Razorpay payment will replace this
+       * in the next step.
+       */
+      const response = await fetch(
+        "http://localhost:5000/api/subscription",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            plan: paymentPlan.name,
+            amount: paymentPlan.price,
+            paymentMethod,
+          }),
+        }
+      );
+
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Subscription update failed."
+        );
+      }
+
+      const subscription =
+        data.subscription || data;
+
+      setCurrentPlan(
+        subscription.plan ||
           paymentPlan.name
-        );
+      );
 
-        localStorage.setItem(
-          "fitpulse_subscription_updated",
-          new Date().toISOString()
-        );
+      setSubscriptionStatus(
+        subscription.status || "ACTIVE"
+      );
 
+      /*
+       * Keep localStorage only as a local cache.
+       * Backend remains the source of truth.
+       */
+      localStorage.setItem(
+        "fitpulse_subscription",
+        subscription.plan ||
+          paymentPlan.name
+      );
+
+      localStorage.setItem(
+        "fitpulse_subscription_updated",
+        new Date().toISOString()
+      );
+
+      if (data.transactionId) {
         localStorage.setItem(
           "fitpulse_last_transaction",
           JSON.stringify({
-            id: `FP-${Date.now()}`,
-            plan: paymentPlan.name,
-            amount: paymentPlan.price,
+            id: data.transactionId,
+            plan:
+              subscription.plan ||
+              paymentPlan.name,
+            amount:
+              paymentPlan.price,
             method: paymentMethod,
-            status: "SUCCESS",
+            status:
+              subscription.status ||
+              "ACTIVE",
             paidAt:
               new Date().toISOString(),
           })
         );
-
-        setCurrentPlan(
-          paymentPlan.name
-        );
-
-        window.dispatchEvent(
-          new Event(
-            "fitpulse-subscription-updated"
-          )
-        );
-
-        setPaymentStep("success");
-        setProcessing(false);
-      } catch (error) {
-        console.error(
-          "PAYMENT ERROR:",
-          error
-        );
-
-        setProcessing(false);
-        setPaymentStep("method");
       }
-    }, 1800);
+
+      window.dispatchEvent(
+        new Event(
+          "fitpulse-subscription-updated"
+        )
+      );
+
+      setPaymentStep("success");
+    } catch (err) {
+      console.error(
+        "SUBSCRIPTION PAYMENT ERROR:",
+        err
+      );
+
+      setProcessing(false);
+      setPaymentStep("method");
+
+      setError(
+        err.message ||
+          "Unable to update subscription."
+      );
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const selectedPlan =
@@ -202,140 +347,154 @@ function Pricing({ navigate }) {
           <div className="billing-status">
             <span className="status-dot" />
 
-            CURRENT PLAN: {currentPlan}
+            CURRENT PLAN: {loading
+              ? "LOADING..."
+              : currentPlan}
           </div>
         </header>
 
-        <section className="pricing-plans">
-          {plans.map((plan) => {
-            const isCurrent =
-              plan.name === currentPlan;
+        {error && (
+          <div className="settings-error">
+            {error}
+          </div>
+        )}
 
-            return (
-              <div
-                className={`pricing-card ${
-                  plan.popular
-                    ? "popular"
-                    : ""
-                } ${
-                  isCurrent
-                    ? "selected-plan"
-                    : ""
-                }`}
-                key={plan.name}
-              >
-                {plan.popular && (
-                  <div className="popular-label">
-                    MOST POPULAR
+        {loading ? (
+          <div className="settings-loading">
+            Loading subscription...
+          </div>
+        ) : (
+          <>
+            <section className="pricing-plans">
+              {plans.map((plan) => {
+                const isCurrent =
+                  plan.name === currentPlan;
+
+                return (
+                  <div
+                    className={`pricing-card ${
+                      plan.popular
+                        ? "popular"
+                        : ""
+                    } ${
+                      isCurrent
+                        ? "selected-plan"
+                        : ""
+                    }`}
+                    key={plan.name}
+                  >
+                    {plan.popular && (
+                      <div className="popular-label">
+                        MOST POPULAR
+                      </div>
+                    )}
+
+                    <div className="pricing-icon">
+                      {plan.name === "ELITE" ? (
+                        <Crown size={19} />
+                      ) : (
+                        <Zap size={19} />
+                      )}
+                    </div>
+
+                    <p className="pricing-plan-name">
+                      {plan.name}
+                    </p>
+
+                    <h2>
+                      {plan.priceText}
+                    </h2>
+
+                    {plan.period && (
+                      <span className="pricing-period">
+                        {plan.period}
+                      </span>
+                    )}
+
+                    <p className="pricing-description">
+                      {plan.description}
+                    </p>
+
+                    <div className="pricing-divider" />
+
+                    <div className="pricing-features">
+                      {plan.features.map(
+                        (feature) => (
+                          <div
+                            className="pricing-feature"
+                            key={feature}
+                          >
+                            <Check size={14} />
+
+                            <span>
+                              {feature}
+                            </span>
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className={
+                        isCurrent
+                          ? "pricing-button current"
+                          : "pricing-button"
+                      }
+                      disabled={isCurrent}
+                      onClick={() =>
+                        openPayment(plan)
+                      }
+                    >
+                      {isCurrent
+                        ? "CURRENT PLAN"
+                        : "UPGRADE PLAN"}
+                    </button>
                   </div>
-                )}
+                );
+              })}
+            </section>
 
-                <div className="pricing-icon">
-                  {plan.name === "ELITE" ? (
-                    <Crown size={19} />
-                  ) : (
-                    <Zap size={19} />
-                  )}
-                </div>
-
-                <p className="pricing-plan-name">
-                  {plan.name}
+            <section className="subscription-details">
+              <div>
+                <p>
+                  YOUR CURRENT SUBSCRIPTION
                 </p>
 
                 <h2>
-                  {plan.priceText}
+                  {selectedPlan?.name ||
+                    "CORE"}{" "}
+                  PLAN
                 </h2>
 
-                {plan.period && (
-                  <span className="pricing-period">
-                    {plan.period}
-                  </span>
-                )}
+                <span>
+                  {currentPlan === "CORE"
+                    ? "Free membership active"
+                    : `${currentPlan} membership active`}
+                </span>
+              </div>
 
-                <p className="pricing-description">
-                  {plan.description}
-                </p>
+              <div className="subscription-info">
+                <div>
+                  <span>PLAN</span>
 
-                <div className="pricing-divider" />
-
-                <div className="pricing-features">
-                  {plan.features.map(
-                    (feature) => (
-                      <div
-                        className="pricing-feature"
-                        key={feature}
-                      >
-                        <Check size={14} />
-
-                        <span>
-                          {feature}
-                        </span>
-                      </div>
-                    )
-                  )}
+                  <strong>
+                    {currentPlan}
+                  </strong>
                 </div>
 
-                <button
-                  type="button"
-                  className={
-                    isCurrent
-                      ? "pricing-button current"
-                      : "pricing-button"
-                  }
-                  disabled={isCurrent}
-                  onClick={() =>
-                    openPayment(plan)
-                  }
-                >
-                  {isCurrent
-                    ? "CURRENT PLAN"
-                    : "UPGRADE PLAN"}
-                </button>
+                <div>
+                  <span>STATUS</span>
+
+                  <strong className="active-text">
+                    {subscriptionStatus}
+                  </strong>
+                </div>
               </div>
-            );
-          })}
-        </section>
-
-        <section className="subscription-details">
-          <div>
-            <p>
-              YOUR CURRENT SUBSCRIPTION
-            </p>
-
-            <h2>
-              {selectedPlan?.name ||
-                "CORE"}{" "}
-              PLAN
-            </h2>
-
-            <span>
-              {currentPlan === "CORE"
-                ? "Free membership active"
-                : `${currentPlan} membership active`}
-            </span>
-          </div>
-
-          <div className="subscription-info">
-            <div>
-              <span>PLAN</span>
-
-              <strong>
-                {currentPlan}
-              </strong>
-            </div>
-
-            <div>
-              <span>STATUS</span>
-
-              <strong className="active-text">
-                ACTIVE
-              </strong>
-            </div>
-          </div>
-        </section>
+            </section>
+          </>
+        )}
       </main>
-
-      {/* PAYMENT MODAL */}
 
       {paymentPlan && (
         <div className="payment-overlay">
@@ -345,9 +504,7 @@ function Pricing({ navigate }) {
               <button
                 type="button"
                 className="payment-close"
-                onClick={
-                  closePayment
-                }
+                onClick={closePayment}
                 disabled={processing}
               >
                 ×
@@ -359,9 +516,7 @@ function Pricing({ navigate }) {
               <>
                 <div className="payment-header">
                   <div className="payment-title-icon">
-                    <CreditCard
-                      size={20}
-                    />
+                    <CreditCard size={20} />
                   </div>
 
                   <div>
@@ -392,8 +547,7 @@ function Pricing({ navigate }) {
                     </span>
 
                     <strong>
-                      ₹
-                      {paymentPlan.price}
+                      ₹{paymentPlan.price}
                     </strong>
                   </div>
                 </div>
@@ -402,8 +556,7 @@ function Pricing({ navigate }) {
                   <button
                     type="button"
                     className={
-                      paymentMethod ===
-                      "UPI"
+                      paymentMethod === "UPI"
                         ? "payment-method active"
                         : "payment-method"
                     }
@@ -413,9 +566,7 @@ function Pricing({ navigate }) {
                       )
                     }
                   >
-                    <Smartphone
-                      size={19}
-                    />
+                    <Smartphone size={19} />
 
                     <div>
                       <strong>
@@ -437,8 +588,7 @@ function Pricing({ navigate }) {
                   <button
                     type="button"
                     className={
-                      paymentMethod ===
-                      "CARD"
+                      paymentMethod === "CARD"
                         ? "payment-method active"
                         : "payment-method"
                     }
@@ -448,9 +598,7 @@ function Pricing({ navigate }) {
                       )
                     }
                   >
-                    <CreditCard
-                      size={19}
-                    />
+                    <CreditCard size={19} />
 
                     <div>
                       <strong>
@@ -483,17 +631,16 @@ function Pricing({ navigate }) {
                 <button
                   type="button"
                   className="pay-now-button"
-                  onClick={
-                    handlePayment
-                  }
+                  onClick={handlePayment}
                 >
                   PAY ₹
                   {paymentPlan.price}
                 </button>
 
                 <p className="payment-note">
-                  Demo checkout. No real money
-                  will be charged.
+                  Backend subscription activation
+                  is connected. Real Razorpay payment
+                  will be added next.
                 </p>
               </>
             )}
@@ -512,7 +659,7 @@ function Pricing({ navigate }) {
                 </h2>
 
                 <span>
-                  Verifying your transaction
+                  Updating your subscription
                   securely.
                 </span>
               </div>
@@ -522,13 +669,11 @@ function Pricing({ navigate }) {
               "success" && (
               <div className="payment-success">
                 <div className="success-icon">
-                  <CheckCircle2
-                    size={34}
-                  />
+                  <CheckCircle2 size={34} />
                 </div>
 
                 <p>
-                  PAYMENT SUCCESSFUL
+                  SUBSCRIPTION UPDATED
                 </p>
 
                 <h2>
@@ -548,15 +693,23 @@ function Pricing({ navigate }) {
                     </span>
 
                     <strong>
-                      FP-
-                      {JSON.parse(
-                        localStorage.getItem(
-                          "fitpulse_last_transaction"
-                        ) || "{}"
-                      ).id?.replace(
-                        "FP-",
-                        ""
-                      ) || "SUCCESS"}
+                      {(() => {
+                        try {
+                          const transaction =
+                            JSON.parse(
+                              localStorage.getItem(
+                                "fitpulse_last_transaction"
+                              ) || "{}"
+                            );
+
+                          return (
+                            transaction.id ||
+                            "BACKEND"
+                          );
+                        } catch {
+                          return "BACKEND";
+                        }
+                      })()}
                     </strong>
                   </div>
 
@@ -566,8 +719,7 @@ function Pricing({ navigate }) {
                     </span>
 
                     <strong>
-                      ₹
-                      {paymentPlan.price}
+                      ₹{paymentPlan.price}
                     </strong>
                   </div>
 
@@ -602,3 +754,4 @@ function Pricing({ navigate }) {
 }
 
 export default Pricing;
+

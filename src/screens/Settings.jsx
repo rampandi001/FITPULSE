@@ -35,22 +35,29 @@ function Settings({ navigate }) {
 
   useEffect(() => {
     const loadData = async () => {
+      const token = localStorage.getItem("fitpulse_token");
+
+      if (!token) {
+        navigate("signin");
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
       try {
-        const token = localStorage.getItem("fitpulse_token");
-
-        if (!token) {
-          navigate("signin");
-          return;
-        }
-
-        // Load stored user
-        const storedUser = localStorage.getItem("fitpulse_user");
+        const storedUser = localStorage.getItem(
+          "fitpulse_user"
+        );
 
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch {
+            localStorage.removeItem("fitpulse_user");
+          }
         }
 
-        // Load settings from backend
         const response = await fetch(
           "http://localhost:5000/api/settings",
           {
@@ -63,27 +70,33 @@ function Settings({ navigate }) {
 
         const data = await response.json();
 
-        if (!response.ok) {
-          setError(
-            data.message || "Failed to load settings."
-          );
+        if (response.status === 401) {
+          localStorage.removeItem("fitpulse_token");
+          localStorage.removeItem("fitpulse_user");
+          navigate("signin");
           return;
         }
 
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load settings."
+          );
+        }
+
         setDarkMode(
-          data.darkMode !== undefined
+          typeof data.darkMode === "boolean"
             ? data.darkMode
             : true
         );
 
         setNotifications(
-          data.notifications !== undefined
+          typeof data.notifications === "boolean"
             ? data.notifications
             : true
         );
 
         setPrivacy(
-          data.privateActivity !== undefined
+          typeof data.privateActivity === "boolean"
             ? data.privateActivity
             : false
         );
@@ -92,10 +105,14 @@ function Settings({ navigate }) {
           data.language || "English"
         );
       } catch (err) {
-        console.error("SETTINGS LOAD ERROR:", err);
+        console.error(
+          "SETTINGS LOAD ERROR:",
+          err
+        );
 
         setError(
-          "Unable to connect to FITPULSE backend."
+          err.message ||
+            "Unable to connect to FITPULSE backend."
         );
       } finally {
         setLoading(false);
@@ -112,19 +129,27 @@ function Settings({ navigate }) {
   const saveSettings = async (
     updatedValues = {}
   ) => {
+    const token = localStorage.getItem(
+      "fitpulse_token"
+    );
+
+    if (!token) {
+      navigate("signin");
+      return false;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+
     try {
-      setSaving(true);
-      setMessage("");
-      setError("");
-
-      const token = localStorage.getItem(
-        "fitpulse_token"
-      );
-
-      if (!token) {
-        navigate("signin");
-        return;
-      }
+      const settingsToSave = {
+        darkMode,
+        notifications,
+        privateActivity: privacy,
+        language,
+        ...updatedValues,
+      };
 
       const response = await fetch(
         "http://localhost:5000/api/settings",
@@ -134,35 +159,54 @@ function Settings({ navigate }) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            darkMode,
-            notifications,
-            privateActivity: privacy,
-            language,
-            ...updatedValues,
-          }),
+          body: JSON.stringify(settingsToSave),
         }
       );
 
       const data = await response.json();
 
-      if (!response.ok) {
-        setError(
-          data.message || "Failed to save settings."
-        );
-        return;
+      if (response.status === 401) {
+        localStorage.removeItem("fitpulse_token");
+        localStorage.removeItem("fitpulse_user");
+        navigate("signin");
+        return false;
       }
 
-      // Update state with backend values
-      setDarkMode(data.settings.darkMode);
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to save settings."
+        );
+      }
+
+      const savedSettings = data.settings || data;
+
+      setDarkMode(
+        typeof savedSettings.darkMode === "boolean"
+          ? savedSettings.darkMode
+          : settingsToSave.darkMode
+      );
+
       setNotifications(
-        data.settings.notifications
+        typeof savedSettings.notifications === "boolean"
+          ? savedSettings.notifications
+          : settingsToSave.notifications
       );
+
       setPrivacy(
-        data.settings.privateActivity
+        typeof savedSettings.privateActivity ===
+          "boolean"
+          ? savedSettings.privateActivity
+          : settingsToSave.privateActivity
       );
+
       setLanguage(
-        data.settings.language
+        savedSettings.language ||
+          settingsToSave.language ||
+          "English"
+      );
+
+      window.dispatchEvent(
+        new Event("fitpulse-settings-updated")
       );
 
       setMessage("Settings saved successfully.");
@@ -170,12 +214,20 @@ function Settings({ navigate }) {
       setTimeout(() => {
         setMessage("");
       }, 2500);
+
+      return true;
     } catch (err) {
-      console.error("SETTINGS SAVE ERROR:", err);
+      console.error(
+        "SETTINGS SAVE ERROR:",
+        err
+      );
 
       setError(
-        "Unable to connect to FITPULSE backend."
+        err.message ||
+          "Unable to connect to FITPULSE backend."
       );
+
+      return false;
     } finally {
       setSaving(false);
     }
@@ -185,33 +237,70 @@ function Settings({ navigate }) {
   // TOGGLE HANDLERS
   // --------------------------------------------------
 
-  const handleDarkMode = () => {
+  const handleDarkMode = async () => {
     const newValue = !darkMode;
 
     setDarkMode(newValue);
 
-    saveSettings({
+    const success = await saveSettings({
       darkMode: newValue,
     });
+
+    if (!success) {
+      setDarkMode(!newValue);
+    }
   };
 
-  const handleNotifications = () => {
+  const handleNotifications = async () => {
     const newValue = !notifications;
 
     setNotifications(newValue);
 
-    saveSettings({
+    const success = await saveSettings({
       notifications: newValue,
     });
+
+    if (!success) {
+      setNotifications(!newValue);
+    }
   };
 
-  const handlePrivacy = () => {
+  const handlePrivacy = async () => {
     const newValue = !privacy;
 
     setPrivacy(newValue);
 
-    saveSettings({
+    const success = await saveSettings({
       privateActivity: newValue,
+    });
+
+    if (!success) {
+      setPrivacy(!newValue);
+    }
+  };
+
+  // --------------------------------------------------
+  // LANGUAGE
+  // --------------------------------------------------
+
+  const handleLanguage = async () => {
+    // Only English is currently supported by the UI.
+    const newLanguage = "English";
+
+    if (language === newLanguage) {
+      setMessage("English is already selected.");
+
+      setTimeout(() => {
+        setMessage("");
+      }, 2500);
+
+      return;
+    }
+
+    setLanguage(newLanguage);
+
+    await saveSettings({
+      language: newLanguage,
     });
   };
 
@@ -225,6 +314,10 @@ function Settings({ navigate }) {
 
     window.dispatchEvent(
       new Event("fitpulse-user-updated")
+    );
+
+    window.dispatchEvent(
+      new Event("fitpulse-settings-updated")
     );
 
     navigate("landing");
@@ -259,7 +352,6 @@ function Settings({ navigate }) {
       />
 
       <main className="settings-main">
-
         {/* HEADER */}
 
         <header className="settings-header">
@@ -293,7 +385,6 @@ function Settings({ navigate }) {
         {/* PROFILE */}
 
         <section className="settings-section">
-
           <div className="settings-section-heading">
             <div>
               <p>ACCOUNT</p>
@@ -305,9 +396,7 @@ function Settings({ navigate }) {
           </div>
 
           <div className="settings-profile-card">
-
             <div className="settings-avatar">
-
               {user?.profilePicture ? (
                 <img
                   src={user.profilePicture}
@@ -316,11 +405,9 @@ function Settings({ navigate }) {
               ) : (
                 <UserRound size={27} />
               )}
-
             </div>
 
             <div className="settings-profile-info">
-
               <strong>
                 {user?.name || "Athlete"}
               </strong>
@@ -333,10 +420,10 @@ function Settings({ navigate }) {
               <small>
                 ATHLETE LVL 14
               </small>
-
             </div>
 
             <button
+              type="button"
               className="settings-edit-button"
               onClick={() =>
                 navigate("profile")
@@ -346,17 +433,13 @@ function Settings({ navigate }) {
 
               <ChevronRight size={15} />
             </button>
-
           </div>
-
         </section>
 
         {/* PREFERENCES */}
 
         <section className="settings-section">
-
           <div className="settings-section-heading">
-
             <div>
               <p>EXPERIENCE</p>
 
@@ -364,21 +447,17 @@ function Settings({ navigate }) {
             </div>
 
             <span>3 OPTIONS</span>
-
           </div>
 
           <div className="settings-list">
-
             {/* DARK MODE */}
 
             <div className="settings-row">
-
               <div className="settings-row-icon">
                 <Moon size={18} />
               </div>
 
               <div className="settings-row-content">
-
                 <strong>
                   Dark Interface
                 </strong>
@@ -387,32 +466,30 @@ function Settings({ navigate }) {
                   Use the dark FITPULSE
                   performance interface.
                 </span>
-
               </div>
 
               <button
+                type="button"
                 className={`settings-toggle ${
                   darkMode ? "active" : ""
                 }`}
                 onClick={handleDarkMode}
                 disabled={saving}
                 aria-label="Toggle dark mode"
+                aria-pressed={darkMode}
               >
                 <span />
               </button>
-
             </div>
 
             {/* NOTIFICATIONS */}
 
             <div className="settings-row">
-
               <div className="settings-row-icon">
                 <Bell size={18} />
               </div>
 
               <div className="settings-row-content">
-
                 <strong>
                   Push Notifications
                 </strong>
@@ -421,32 +498,30 @@ function Settings({ navigate }) {
                   Receive workout reminders and
                   performance alerts.
                 </span>
-
               </div>
 
               <button
+                type="button"
                 className={`settings-toggle ${
                   notifications ? "active" : ""
                 }`}
                 onClick={handleNotifications}
                 disabled={saving}
                 aria-label="Toggle notifications"
+                aria-pressed={notifications}
               >
                 <span />
               </button>
-
             </div>
 
             {/* PRIVACY */}
 
             <div className="settings-row">
-
               <div className="settings-row-icon">
                 <Eye size={18} />
               </div>
 
               <div className="settings-row-content">
-
                 <strong>
                   Private Activity
                 </strong>
@@ -455,32 +530,28 @@ function Settings({ navigate }) {
                   Keep your workout activity
                   visible only to you.
                 </span>
-
               </div>
 
               <button
+                type="button"
                 className={`settings-toggle ${
                   privacy ? "active" : ""
                 }`}
                 onClick={handlePrivacy}
                 disabled={saving}
                 aria-label="Toggle private activity"
+                aria-pressed={privacy}
               >
                 <span />
               </button>
-
             </div>
-
           </div>
-
         </section>
 
         {/* SECURITY */}
 
         <section className="settings-section">
-
           <div className="settings-section-heading">
-
             <div>
               <p>ACCOUNT PROTECTION</p>
 
@@ -488,22 +559,21 @@ function Settings({ navigate }) {
             </div>
 
             <ShieldCheck size={18} />
-
           </div>
 
           <div className="settings-security-grid">
-
             {/* CHANGE PASSWORD */}
 
             <button
+              type="button"
               className="settings-security-card"
               onClick={() => {
                 setMessage(
                   "Password management will be available soon."
                 );
+                setError("");
               }}
             >
-
               <div className="settings-security-icon">
                 <Lock size={18} />
               </div>
@@ -519,20 +589,20 @@ function Settings({ navigate }) {
               </div>
 
               <ChevronRight size={16} />
-
             </button>
 
             {/* DEVICES */}
 
             <button
+              type="button"
               className="settings-security-card"
               onClick={() => {
                 setMessage(
                   "Connected device management will be available soon."
                 );
+                setError("");
               }}
             >
-
               <div className="settings-security-icon">
                 <Smartphone size={18} />
               </div>
@@ -549,27 +619,16 @@ function Settings({ navigate }) {
               </div>
 
               <ChevronRight size={16} />
-
             </button>
 
             {/* LANGUAGE */}
 
             <button
+              type="button"
               className="settings-security-card"
-              onClick={() => {
-                const newLanguage =
-                  language === "English"
-                    ? "English"
-                    : "English";
-
-                setLanguage(newLanguage);
-
-                saveSettings({
-                  language: newLanguage,
-                });
-              }}
+              onClick={handleLanguage}
+              disabled={saving}
             >
-
               <div className="settings-security-icon">
                 <Globe size={18} />
               </div>
@@ -585,19 +644,14 @@ function Settings({ navigate }) {
               </div>
 
               <ChevronRight size={16} />
-
             </button>
-
           </div>
-
         </section>
 
         {/* LOGOUT */}
 
         <section className="settings-logout-section">
-
           <div>
-
             <p>SESSION CONTROL</p>
 
             <h2>
@@ -608,10 +662,10 @@ function Settings({ navigate }) {
               You can sign back in anytime using
               your account credentials.
             </span>
-
           </div>
 
           <button
+            type="button"
             className="settings-logout-button"
             onClick={handleLogout}
           >
@@ -619,13 +673,11 @@ function Settings({ navigate }) {
 
             LOG OUT
           </button>
-
         </section>
 
         {/* FOOTER */}
 
         <footer className="settings-footer">
-
           <span>
             FITPULSE PERFORMANCE SYSTEM
           </span>
@@ -633,9 +685,7 @@ function Settings({ navigate }) {
           <span>
             VERSION 2.0
           </span>
-
         </footer>
-
       </main>
     </div>
   );

@@ -11,92 +11,93 @@ import Sidebar from "../components/Sidebar";
 
 function Goals({ navigate }) {
   const [workouts, setWorkouts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const token = localStorage.getItem(
+  /*
+    LOAD WORKOUT HISTORY FROM BACKEND
+  */
+  const loadHistory = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const token =
+        localStorage.getItem("fitpulse_token");
+
+      if (!token) {
+        navigate("signin");
+        return;
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/api/workouts/history",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      /*
+        EXPIRED / INVALID TOKEN
+      */
+      if (response.status === 401) {
+        localStorage.removeItem(
           "fitpulse_token"
         );
 
-        if (!token) {
-          console.warn(
-            "GOALS: No authentication token found."
-          );
-          setWorkouts([]);
-          return;
-        }
-
-        const response = await fetch(
-          "http://localhost:5000/api/workouts/history",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        localStorage.removeItem(
+          "fitpulse_user"
         );
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              "Failed to load workout goals data."
-          );
-        }
-
-        const history = Array.isArray(data)
-          ? data
-          : Array.isArray(data.workouts)
-          ? data.workouts
-          : [];
-
-        setWorkouts(history);
-
-        // Keep the existing local cache synchronized.
-        localStorage.setItem(
-          "fitpulse_workout_history",
-          JSON.stringify(history)
-        );
-      } catch (error) {
-        console.error(
-          "GOALS HISTORY ERROR:",
-          error
-        );
-
-        // Fallback to the existing local cache
-        // if the backend is temporarily unavailable.
-        try {
-          const storedHistory = localStorage.getItem(
-            "fitpulse_workout_history"
-          );
-
-          if (!storedHistory) {
-            setWorkouts([]);
-            return;
-          }
-
-          const parsedHistory = JSON.parse(
-            storedHistory
-          );
-
-          setWorkouts(
-            Array.isArray(parsedHistory)
-              ? parsedHistory
-              : []
-          );
-        } catch (cacheError) {
-          console.error(
-            "GOALS CACHE ERROR:",
-            cacheError
-          );
-
-          setWorkouts([]);
-        }
+        navigate("signin");
+        return;
       }
-    };
 
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Failed to load workout goals data."
+        );
+      }
+
+      /*
+        SUPPORT DIFFERENT BACKEND RESPONSE FORMATS
+      */
+      const history = Array.isArray(data)
+        ? data
+        : Array.isArray(data.workouts)
+        ? data.workouts
+        : Array.isArray(data.history)
+        ? data.history
+        : [];
+
+      setWorkouts(history);
+    } catch (error) {
+      console.error(
+        "GOALS HISTORY ERROR:",
+        error
+      );
+
+      setError(
+        error.message ||
+          "Unable to connect to FITPULSE backend."
+      );
+
+      setWorkouts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+    INITIAL LOAD + WORKOUT UPDATES
+  */
+  useEffect(() => {
     loadHistory();
 
     const handleWorkoutUpdate = () => {
@@ -124,7 +125,7 @@ function Goals({ navigate }) {
         handleWorkoutUpdate
       );
     };
-  }, []);
+  }, [navigate]);
 
   /*
     GET CURRENT WEEK
@@ -154,18 +155,31 @@ function Goals({ navigate }) {
 
     return workouts.filter(
       (workout) => {
+        /*
+          Only completed workouts
+        */
         if (
           workout.status &&
-          workout.status !==
+          String(
+            workout.status
+          ).toUpperCase() !==
             "COMPLETED"
         ) {
           return false;
         }
 
+        const workoutDateValue =
+          workout.completedAt ||
+          workout.date ||
+          workout.createdAt;
+
+        if (!workoutDateValue) {
+          return false;
+        }
+
         const workoutDate =
           new Date(
-            workout.completedAt ||
-              workout.date
+            workoutDateValue
           );
 
         if (
@@ -191,8 +205,9 @@ function Goals({ navigate }) {
     return currentWeekWorkouts.reduce(
       (total, workout) =>
         total +
-        (Number(workout.calories) ||
-          0),
+        (Number(
+          workout.calories
+        ) || 0),
       0
     );
   }, [currentWeekWorkouts]);
@@ -261,6 +276,9 @@ function Goals({ navigate }) {
       activeTimeTarget
     );
 
+  /*
+    GOALS
+  */
   const goals = [
     {
       title: "Weekly Calorie Target",
@@ -356,6 +374,26 @@ function Goals({ navigate }) {
     );
   };
 
+  /*
+    LOADING STATE
+  */
+  if (loading) {
+    return (
+      <div className="app-shell">
+        <Sidebar
+          navigate={navigate}
+          active="goals"
+        />
+
+        <main className="goals-main">
+          <div className="settings-loading">
+            LOADING GOALS...
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <Sidebar
@@ -364,6 +402,9 @@ function Goals({ navigate }) {
       />
 
       <main className="goals-main">
+
+        {/* HEADER */}
+
         <header className="goals-header">
           <div>
             <p>
@@ -393,7 +434,18 @@ function Goals({ navigate }) {
           </button>
         </header>
 
+        {/* ERROR */}
+
+        {error && (
+          <div className="settings-error">
+            {error}
+          </div>
+        )}
+
+        {/* SUMMARY */}
+
         <section className="goal-summary">
+
           <div className="goal-summary-card">
             <span>
               ACTIVE GOALS
@@ -427,10 +479,15 @@ function Goals({ navigate }) {
               {successRate}%
             </strong>
           </div>
+
         </section>
 
+        {/* ACTIVE GOALS */}
+
         <section className="goals-section">
+
           <div className="section-heading">
+
             <div>
               <p>
                 CURRENT TARGETS
@@ -444,9 +501,11 @@ function Goals({ navigate }) {
             <span>
               {activeGoals} ACTIVE
             </span>
+
           </div>
 
           <div className="goal-list">
+
             {goals.map((goal) => {
               const Icon =
                 goal.icon;
@@ -456,12 +515,15 @@ function Goals({ navigate }) {
                   className="goal-card"
                   key={goal.title}
                 >
+
                   <div className="goal-card-top">
+
                     <div className="goal-icon">
                       <Icon size={19} />
                     </div>
 
                     <div className="goal-info">
+
                       <span>
                         {goal.progress >=
                         100
@@ -472,22 +534,27 @@ function Goals({ navigate }) {
                       <h3>
                         {goal.title}
                       </h3>
+
                     </div>
 
                     <strong className="goal-percentage">
                       {goal.progress}%
                     </strong>
+
                   </div>
 
                   <div className="goal-progress-track">
+
                     <div
                       style={{
                         width: `${goal.progress}%`,
                       }}
                     />
+
                   </div>
 
                   <div className="goal-card-bottom">
+
                     <div>
                       <strong>
                         {goal.current}
@@ -510,15 +577,23 @@ function Goals({ navigate }) {
                     >
                       VIEW DETAILS
                     </button>
+
                   </div>
+
                 </div>
               );
             })}
+
           </div>
+
         </section>
 
+        {/* COMPLETED GOALS */}
+
         <section className="goal-completed">
+
           <div className="section-heading">
+
             <div>
               <p>
                 ACHIEVEMENTS
@@ -528,10 +603,12 @@ function Goals({ navigate }) {
                 RECENTLY COMPLETED
               </h2>
             </div>
+
           </div>
 
           {completedGoals === 0 ? (
             <div className="completed-card">
+
               <div className="completed-icon">
                 <Target size={20} />
               </div>
@@ -550,6 +627,7 @@ function Goals({ navigate }) {
               <b>
                 IN PROGRESS
               </b>
+
             </div>
           ) : (
             goals
@@ -562,6 +640,7 @@ function Goals({ navigate }) {
                   className="completed-card"
                   key={`completed-${goal.title}`}
                 >
+
                   <div className="completed-icon">
                     <CheckCircle2 size={20} />
                   </div>
@@ -580,10 +659,13 @@ function Goals({ navigate }) {
                   <b>
                     COMPLETED
                   </b>
+
                 </div>
               ))
           )}
+
         </section>
+
       </main>
     </div>
   );

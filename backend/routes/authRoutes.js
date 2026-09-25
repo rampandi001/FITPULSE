@@ -6,6 +6,22 @@ const User = require("../models/User");
 
 const router = express.Router();
 
+const createToken = (userId) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not configured.");
+  }
+
+  return jwt.sign(
+    {
+      id: userId.toString(),
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
+};
+
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
@@ -17,8 +33,46 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    const cleanName = String(name).trim();
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanPassword = String(password);
+
+    if (cleanName.length < 2) {
+      return res.status(400).json({
+        message: "Name must contain at least 2 characters.",
+      });
+    }
+
+    if (cleanName.length > 100) {
+      return res.status(400).json({
+        message: "Name is too long.",
+      });
+    }
+
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({
+        message: "Please enter a valid email address.",
+      });
+    }
+
+    if (cleanPassword.length < 6) {
+      return res.status(400).json({
+        message:
+          "Password must contain at least 6 characters.",
+      });
+    }
+
+    if (cleanPassword.length > 128) {
+      return res.status(400).json({
+        message: "Password is too long.",
+      });
+    }
+
     const existingUser = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
     });
 
     if (existingUser) {
@@ -27,23 +81,18 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(
+      cleanPassword,
+      10
+    );
 
     const user = await User.create({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
+      name: cleanName,
+      email: cleanEmail,
       password: hashedPassword,
     });
 
-    const token = jwt.sign(
-      {
-        id: user._id.toString(),
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
+    const token = createToken(user._id);
 
     res.status(201).json({
       message: "Registration successful.",
@@ -56,12 +105,19 @@ router.post("/register", async (req, res) => {
         height: user.height,
         targetWeight: user.targetWeight,
         trainingFocus: user.trainingFocus,
-        frequencyPreference: user.frequencyPreference,
+        frequencyPreference:
+          user.frequencyPreference,
         fitnessGoal: user.fitnessGoal,
       },
     });
   } catch (error) {
     console.error("REGISTER ERROR:", error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: "Email already registered.",
+      });
+    }
 
     res.status(500).json({
       message: "Registration failed.",
@@ -80,8 +136,14 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    const cleanEmail = String(email)
+      .trim()
+      .toLowerCase();
+
+    const cleanPassword = String(password);
+
     const user = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
     });
 
     if (!user) {
@@ -91,7 +153,7 @@ router.post("/login", async (req, res) => {
     }
 
     const passwordMatch = await bcrypt.compare(
-      password,
+      cleanPassword,
       user.password
     );
 
@@ -101,17 +163,9 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: user._id.toString(),
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
+    const token = createToken(user._id);
 
-    res.json({
+    res.status(200).json({
       message: "Login successful.",
       token,
       user: {
@@ -122,7 +176,8 @@ router.post("/login", async (req, res) => {
         height: user.height,
         targetWeight: user.targetWeight,
         trainingFocus: user.trainingFocus,
-        frequencyPreference: user.frequencyPreference,
+        frequencyPreference:
+          user.frequencyPreference,
         fitnessGoal: user.fitnessGoal,
       },
     });

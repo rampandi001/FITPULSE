@@ -1,58 +1,161 @@
+import { useEffect, useState } from "react";
+
 import {
   Bell,
-  CheckCircle2,
-  Clock3,
-  Dumbbell,
-  Flame,
-  HeartPulse,
   Settings,
 } from "lucide-react";
 
 import Sidebar from "../components/Sidebar";
 
 function Notifications({ navigate }) {
-  const notifications = [
-    {
-      icon: Dumbbell,
-      type: "WORKOUT",
-      title: "Your workout is ready",
-      text: "Upper Push Power is scheduled for today.",
-      time: "10 min ago",
-      unread: true,
-    },
-    {
-      icon: HeartPulse,
-      type: "RECOVERY",
-      title: "Recovery status updated",
-      text: "Your body readiness is currently at 82%.",
-      time: "1 hour ago",
-      unread: true,
-    },
-    {
-      icon: Flame,
-      type: "GOAL",
-      title: "You're close to your calorie target",
-      text: "Only 1,520 kcal remaining to reach your weekly goal.",
-      time: "3 hours ago",
-      unread: false,
-    },
-    {
-      icon: Clock3,
-      type: "REMINDER",
-      title: "Workout reminder",
-      text: "Your scheduled training session starts in 30 minutes.",
-      time: "Yesterday",
-      unread: false,
-    },
-    {
-      icon: CheckCircle2,
-      type: "ACHIEVEMENT",
-      title: "Goal completed",
-      text: "You've completed your 30 workout session milestone.",
-      time: "Yesterday",
-      unread: false,
-    },
-  ];
+  const [notifications, setNotifications] = useState([]);
+
+  const [preferences, setPreferences] = useState({
+    workoutReminders: true,
+    goalUpdates: true,
+    recoveryAlerts: true,
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [savingPreferences, setSavingPreferences] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadPreferences = async () => {
+      const token = localStorage.getItem("fitpulse_token");
+
+      if (!token) {
+        navigate("signin");
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/settings",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.status === 401) {
+          localStorage.removeItem("fitpulse_token");
+          localStorage.removeItem("fitpulse_user");
+          navigate("signin");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            "Failed to load notification settings."
+          );
+        }
+
+        const data = await response.json();
+
+        if (typeof data.notifications === "boolean") {
+          const enabled = data.notifications;
+
+          setPreferences({
+            workoutReminders: enabled,
+            goalUpdates: enabled,
+            recoveryAlerts: enabled,
+          });
+        }
+      } catch (error) {
+        console.error(
+          "NOTIFICATION SETTINGS LOAD ERROR:",
+          error
+        );
+
+        setError(
+          "Unable to load notification preferences."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPreferences();
+  }, [navigate]);
+
+  const togglePreference = async (key) => {
+    const token = localStorage.getItem("fitpulse_token");
+
+    if (!token) {
+      navigate("signin");
+      return;
+    }
+
+    const previousPreferences = preferences;
+
+    const nextPreferences = {
+      ...preferences,
+      [key]: !preferences[key],
+    };
+
+    setPreferences(nextPreferences);
+    setSavingPreferences(true);
+    setError("");
+
+    try {
+      const anyEnabled =
+        nextPreferences.workoutReminders ||
+        nextPreferences.goalUpdates ||
+        nextPreferences.recoveryAlerts;
+
+      const response = await fetch(
+        "http://localhost:5000/api/settings",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            notifications: anyEnabled,
+          }),
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem("fitpulse_token");
+        localStorage.removeItem("fitpulse_user");
+        navigate("signin");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          "Failed to update notification settings."
+        );
+      }
+
+      window.dispatchEvent(
+        new Event("fitpulse-settings-updated")
+      );
+    } catch (error) {
+      console.error(
+        "NOTIFICATION SETTINGS SAVE ERROR:",
+        error
+      );
+
+      setPreferences(previousPreferences);
+      setError(
+        "Unable to save notification preference."
+      );
+    } finally {
+      setSavingPreferences(false);
+    }
+  };
+
+  const unreadCount = 0;
+  const todayCount = 0;
 
   return (
     <div className="app-shell">
@@ -71,25 +174,41 @@ function Notifications({ navigate }) {
             </span>
           </div>
 
-          <button className="mark-read-button">
+          <button
+            type="button"
+            className="mark-read-button"
+            disabled
+          >
             MARK ALL AS READ
           </button>
         </header>
 
+        {error && (
+          <div className="settings-error">
+            {error}
+          </div>
+        )}
+
         <section className="notification-summary">
           <div>
             <span>UNREAD</span>
-            <strong>02</strong>
+            <strong>
+              {String(unreadCount).padStart(2, "0")}
+            </strong>
           </div>
 
           <div>
             <span>TODAY</span>
-            <strong>03</strong>
+            <strong>
+              {String(todayCount).padStart(2, "0")}
+            </strong>
           </div>
 
           <div>
             <span>TOTAL ALERTS</span>
-            <strong>18</strong>
+            <strong>
+              {notifications.length}
+            </strong>
           </div>
         </section>
 
@@ -100,45 +219,76 @@ function Notifications({ navigate }) {
               <h2>ALL NOTIFICATIONS</h2>
             </div>
 
-            <span>18 ALERTS</span>
+            <span>
+              {notifications.length} ALERTS
+            </span>
           </div>
 
-          <div className="notification-list">
-            {notifications.map((notification, index) => {
-              const Icon = notification.icon;
+          {loading ? (
+            <div className="settings-loading">
+              Loading notification settings...
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="notification-list">
+              <div className="notification-item">
+                <div className="notification-icon">
+                  <Bell size={18} />
+                </div>
 
-              return (
-                <div
-                  className={`notification-item ${
-                    notification.unread ? "unread" : ""
-                  }`}
-                  key={index}
-                >
-                  <div className="notification-icon">
-                    <Icon size={18} />
+                <div className="notification-content">
+                  <div className="notification-title">
+                    <span>SYSTEM</span>
                   </div>
 
-                  <div className="notification-content">
-                    <div className="notification-title">
-                      <span>{notification.type}</span>
+                  <h3>No notifications yet</h3>
 
-                      {notification.unread && (
-                        <i />
-                      )}
+                  <p>
+                    Notification records will appear here when
+                    the backend notification system is available.
+                  </p>
+                </div>
+
+                <div className="notification-time">
+                  --
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="notification-list">
+              {notifications.map((notification, index) => {
+                const Icon = notification.icon;
+
+                return (
+                  <div
+                    className={`notification-item ${
+                      notification.unread ? "unread" : ""
+                    }`}
+                    key={index}
+                  >
+                    <div className="notification-icon">
+                      <Icon size={18} />
                     </div>
 
-                    <h3>{notification.title}</h3>
+                    <div className="notification-content">
+                      <div className="notification-title">
+                        <span>{notification.type}</span>
 
-                    <p>{notification.text}</p>
-                  </div>
+                        {notification.unread && <i />}
+                      </div>
 
-                  <div className="notification-time">
-                    {notification.time}
+                      <h3>{notification.title}</h3>
+
+                      <p>{notification.text}</p>
+                    </div>
+
+                    <div className="notification-time">
+                      {notification.time}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         <section className="notification-preferences">
@@ -161,9 +311,26 @@ function Notifications({ navigate }) {
               </span>
             </div>
 
-            <div className="toggle active">
+            <button
+              type="button"
+              className={
+                preferences.workoutReminders
+                  ? "toggle active"
+                  : "toggle"
+              }
+              onClick={() =>
+                togglePreference("workoutReminders")
+              }
+              disabled={
+                loading || savingPreferences
+              }
+              aria-label="Toggle workout reminders"
+              aria-pressed={
+                preferences.workoutReminders
+              }
+            >
               <span />
-            </div>
+            </button>
           </div>
 
           <div className="notification-setting-row">
@@ -174,9 +341,26 @@ function Notifications({ navigate }) {
               </span>
             </div>
 
-            <div className="toggle active">
+            <button
+              type="button"
+              className={
+                preferences.goalUpdates
+                  ? "toggle active"
+                  : "toggle"
+              }
+              onClick={() =>
+                togglePreference("goalUpdates")
+              }
+              disabled={
+                loading || savingPreferences
+              }
+              aria-label="Toggle goal updates"
+              aria-pressed={
+                preferences.goalUpdates
+              }
+            >
               <span />
-            </div>
+            </button>
           </div>
 
           <div className="notification-setting-row">
@@ -187,9 +371,26 @@ function Notifications({ navigate }) {
               </span>
             </div>
 
-            <div className="toggle active">
+            <button
+              type="button"
+              className={
+                preferences.recoveryAlerts
+                  ? "toggle active"
+                  : "toggle"
+              }
+              onClick={() =>
+                togglePreference("recoveryAlerts")
+              }
+              disabled={
+                loading || savingPreferences
+              }
+              aria-label="Toggle recovery alerts"
+              aria-pressed={
+                preferences.recoveryAlerts
+              }
+            >
               <span />
-            </div>
+            </button>
           </div>
         </section>
       </main>

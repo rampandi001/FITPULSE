@@ -1,13 +1,18 @@
 const express = require("express");
+
 const User = require("../models/User");
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+const allowedLanguages = ["English"];
+
 // GET SETTINGS
 router.get("/", protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id).select(
+      "-password"
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -15,7 +20,7 @@ router.get("/", protect, async (req, res) => {
       });
     }
 
-    res.json({
+    res.status(200).json({
       darkMode: user.darkMode,
       notifications: user.notifications,
       privateActivity: user.privateActivity,
@@ -48,35 +53,76 @@ router.put("/", protect, async (req, res) => {
       });
     }
 
+    // DARK MODE
     if (darkMode !== undefined) {
+      if (typeof darkMode !== "boolean") {
+        return res.status(400).json({
+          message: "darkMode must be a boolean.",
+        });
+      }
+
       user.darkMode = darkMode;
     }
 
+    // NOTIFICATIONS
     if (notifications !== undefined) {
+      if (typeof notifications !== "boolean") {
+        return res.status(400).json({
+          message:
+            "notifications must be a boolean.",
+        });
+      }
+
       user.notifications = notifications;
     }
 
+    // PRIVATE ACTIVITY
     if (privateActivity !== undefined) {
-      user.privateActivity = privateActivity;
+      if (
+        typeof privateActivity !== "boolean"
+      ) {
+        return res.status(400).json({
+          message:
+            "privateActivity must be a boolean.",
+        });
+      }
+
+      user.privateActivity =
+        privateActivity;
     }
 
+    // LANGUAGE
     if (language !== undefined) {
+      if (
+        typeof language !== "string" ||
+        !allowedLanguages.includes(language)
+      ) {
+        return res.status(400).json({
+          message: "Unsupported language.",
+        });
+      }
+
       user.language = language;
     }
 
     await user.save();
 
-    res.json({
-      message: "Settings updated successfully.",
+    res.status(200).json({
+      message:
+        "Settings updated successfully.",
       settings: {
         darkMode: user.darkMode,
         notifications: user.notifications,
-        privateActivity: user.privateActivity,
+        privateActivity:
+          user.privateActivity,
         language: user.language,
       },
     });
   } catch (error) {
-    console.error("UPDATE SETTINGS ERROR:", error);
+    console.error(
+      "UPDATE SETTINGS ERROR:",
+      error
+    );
 
     res.status(500).json({
       message: "Failed to update settings.",

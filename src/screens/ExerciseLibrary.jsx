@@ -44,7 +44,7 @@ function ExerciseLibrary({ navigate }) {
         }
 
         const response = await fetch(
-          "http://localhost:5000/api/exercises",
+          "https://fitpulse-feid.onrender.com/api/exercises",
           {
             method: "GET",
             headers: {

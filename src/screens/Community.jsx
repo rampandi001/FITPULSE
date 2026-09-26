@@ -59,7 +59,7 @@ function Community({ navigate }) {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/community",
+        "https://fitpulse-feid.onrender.com/api/community",
         {
           method: "GET",
           headers: {
@@ -148,7 +148,7 @@ function Community({ navigate }) {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/community",
+        "https://fitpulse-feid.onrender.com/api/community",
         {
           method: "POST",
           headers: {
@@ -210,7 +210,7 @@ function Community({ navigate }) {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/community/${postId}/like`,
+        `https://fitpulse-feid.onrender.com/api/community/${postId}/like`,
         {
           method: "POST",
           headers: {
@@ -277,7 +277,7 @@ function Community({ navigate }) {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/community/${postId}/comments`,
+        `https://fitpulse-feid.onrender.com/api/community/${postId}/comments`,
         {
           method: "GET",
           headers: {
@@ -371,7 +371,7 @@ function Community({ navigate }) {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/community/${postId}/comment`,
+        `https://fitpulse-feid.onrender.com/api/community/${postId}/comment`,
         {
           method: "POST",
           headers: {

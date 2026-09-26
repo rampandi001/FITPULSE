@@ -69,7 +69,7 @@ function ExerciseDetails({ navigate }) {
 
         if (selectedExercise?._id) {
           const response = await fetch(
-            `http://localhost:5000/api/exercises/${selectedExercise._id}`,
+            `https://fitpulse-feid.onrender.com/api/exercises/${selectedExercise._id}`,
             {
               method: "GET",
               headers: {

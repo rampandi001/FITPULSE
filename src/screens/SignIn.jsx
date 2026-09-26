@@ -32,7 +32,7 @@ function SignIn({ navigate }) {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+        "https://fitpulse-feid.onrender.com/api/auth/login",
         {
           method: "POST",
           headers: {

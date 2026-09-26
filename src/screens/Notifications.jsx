@@ -34,7 +34,7 @@ function Notifications({ navigate }) {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/settings",
+          "https://fitpulse-feid.onrender.com/api/settings",
           {
             method: "GET",
             headers: {
@@ -110,7 +110,7 @@ function Notifications({ navigate }) {
         nextPreferences.recoveryAlerts;
 
       const response = await fetch(
-        "http://localhost:5000/api/settings",
+        "https://fitpulse-feid.onrender.com/api/settings",
         {
           method: "PUT",
           headers: {

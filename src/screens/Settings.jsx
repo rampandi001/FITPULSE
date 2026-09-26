@@ -59,7 +59,7 @@ function Settings({ navigate }) {
         }
 
         const response = await fetch(
-          "http://localhost:5000/api/settings",
+          "https://fitpulse-feid.onrender.com/api/settings",
           {
             method: "GET",
             headers: {
@@ -152,7 +152,7 @@ function Settings({ navigate }) {
       };
 
       const response = await fetch(
-        "http://localhost:5000/api/settings",
+        "https://fitpulse-feid.onrender.com/api/settings",
         {
           method: "PUT",
           headers: {

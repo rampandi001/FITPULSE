@@ -97,7 +97,7 @@ function Pricing({ navigate }) {
       setError("");
 
       const response = await fetch(
-        "http://localhost:5000/api/subscription",
+        "https://fitpulse-feid.onrender.com/api/subscription",
         {
           method: "GET",
           headers: {
@@ -217,7 +217,7 @@ function Pricing({ navigate }) {
        * in the next step.
        */
       const response = await fetch(
-        "http://localhost:5000/api/subscription",
+        "https://fitpulse-feid.onrender.com/api/subscription",
         {
           method: "POST",
           headers: {

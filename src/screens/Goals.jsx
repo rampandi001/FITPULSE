@@ -31,7 +31,7 @@ function Goals({ navigate }) {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/workouts/history",
+        "https://fitpulse-feid.onrender.com/api/workouts/history",
         {
           method: "GET",
           headers: {

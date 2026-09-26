@@ -638,7 +638,7 @@ function WorkoutTracking({ navigate }) {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/workouts",
+        "https://fitpulse-feid.onrender.com/api/workouts",
         {
           method: "POST",
           headers: {

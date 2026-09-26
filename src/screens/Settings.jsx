@@ -46,9 +46,7 @@ function Settings({ navigate }) {
       setError("");
 
       try {
-        const storedUser = localStorage.getItem(
-          "fitpulse_user"
-        );
+        const storedUser = localStorage.getItem("fitpulse_user");
 
         if (storedUser) {
           try {
@@ -101,14 +99,9 @@ function Settings({ navigate }) {
             : false
         );
 
-        setLanguage(
-          data.language || "English"
-        );
+        setLanguage(data.language || "English");
       } catch (err) {
-        console.error(
-          "SETTINGS LOAD ERROR:",
-          err
-        );
+        console.error("SETTINGS LOAD ERROR:", err);
 
         setError(
           err.message ||
@@ -126,12 +119,8 @@ function Settings({ navigate }) {
   // SAVE SETTINGS
   // --------------------------------------------------
 
-  const saveSettings = async (
-    updatedValues = {}
-  ) => {
-    const token = localStorage.getItem(
-      "fitpulse_token"
-    );
+  const saveSettings = async (updatedValues = {}) => {
+    const token = localStorage.getItem("fitpulse_token");
 
     if (!token) {
       navigate("signin");
@@ -193,8 +182,7 @@ function Settings({ navigate }) {
       );
 
       setPrivacy(
-        typeof savedSettings.privateActivity ===
-          "boolean"
+        typeof savedSettings.privateActivity === "boolean"
           ? savedSettings.privateActivity
           : settingsToSave.privateActivity
       );
@@ -217,10 +205,7 @@ function Settings({ navigate }) {
 
       return true;
     } catch (err) {
-      console.error(
-        "SETTINGS SAVE ERROR:",
-        err
-      );
+      console.error("SETTINGS SAVE ERROR:", err);
 
       setError(
         err.message ||
@@ -284,7 +269,6 @@ function Settings({ navigate }) {
   // --------------------------------------------------
 
   const handleLanguage = async () => {
-    // Only English is currently supported by the UI.
     const newLanguage = "English";
 
     if (language === newLanguage) {
@@ -396,11 +380,36 @@ function Settings({ navigate }) {
           </div>
 
           <div className="settings-profile-card">
-            <div className="settings-avatar">
+            {/* FIXED PROFILE IMAGE */}
+
+            <div
+              className="settings-avatar"
+              style={{
+                width: "96px",
+                height: "96px",
+                minWidth: "96px",
+                minHeight: "96px",
+                maxWidth: "96px",
+                maxHeight: "96px",
+                overflow: "hidden",
+                borderRadius: "14px",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               {user?.profilePicture ? (
                 <img
                   src={user.profilePicture}
                   alt={user.name || "Profile"}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: "center",
+                    display: "block",
+                  }}
                 />
               ) : (
                 <UserRound size={27} />

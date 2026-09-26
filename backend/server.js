@@ -1,7 +1,9 @@
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const dotenv = require("dotenv");
+const helmet = require("helmet");
 
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
@@ -13,22 +15,23 @@ const communityRoutes = require("./routes/communityRoutes");
 const supportRoutes = require("./routes/supportRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 
-const protect = require("./middleware/authMiddleware");
-
-dotenv.config();
-
 const app = express();
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = process.env.PORT || 5000;
 
-const isProduction = process.env.NODE_ENV === "production";
+/*
+  SECURITY
+*/
+app.use(helmet());
 
-const allowedOrigins = isProduction
-  ? [process.env.FRONTEND_URL].filter(Boolean)
-  : [
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-    ];
+/*
+  CORS
+*/
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://fitpulse-opal.vercel.app",
+];
 
 app.use(
   cors({
@@ -37,129 +40,171 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      if (
+        allowedOrigins.includes(origin) ||
+        process.env.NODE_ENV !== "production"
+      ) {
         return callback(null, true);
       }
 
       return callback(
-        new Error("CORS origin not allowed.")
+        new Error("Not allowed by CORS")
       );
     },
+    credentials: true,
+  })
+);
+
+/*
+  BODY PARSER
+*/
+app.use(
+  express.json({
+    limit: "10mb",
   })
 );
 
 app.use(
-  express.json({
-    limit: "2mb",
+  express.urlencoded({
+    extended: true,
+    limit: "10mb",
   })
 );
 
-app.disable("x-powered-by");
-
-app.use((req, res, next) => {
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader(
-    "Referrer-Policy",
-    "strict-origin-when-cross-origin"
-  );
-  next();
-});
-
-// Health check
+/*
+  HEALTH CHECK
+*/
 app.get("/", (req, res) => {
   res.status(200).json({
-    message: "FITPULSE Backend is running successfully 🚀",
+    message: "FITPULSE backend is running.",
+    status: "OK",
   });
 });
 
-// API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/profile", profileRoutes);
-app.use("/api/settings", settingsRoutes);
-app.use("/api/workouts", workoutRoutes);
-app.use("/api/subscription", subscriptionRoutes);
-app.use("/api/exercises", exerciseRoutes);
-app.use("/api/community", communityRoutes);
-app.use("/api/support", supportRoutes);
-app.use("/api/notifications", notificationRoutes);
+/*
+  API ROUTES
+*/
+app.use(
+  "/api/auth",
+  authRoutes
+);
 
-// Authenticated user check
-app.get("/api/auth/me", protect, async (req, res) => {
-  try {
-    res.status(200).json({
-      message: "Authenticated user",
-      user: req.user,
-    });
-  } catch (error) {
-    console.error("AUTH ME ERROR:", error);
+app.use(
+  "/api/profile",
+  profileRoutes
+);
+
+app.use(
+  "/api/settings",
+  settingsRoutes
+);
+
+app.use(
+  "/api/workouts",
+  workoutRoutes
+);
+
+app.use(
+  "/api/subscription",
+  subscriptionRoutes
+);
+
+app.use(
+  "/api/exercises",
+  exerciseRoutes
+);
+
+app.use(
+  "/api/community",
+  communityRoutes
+);
+
+app.use(
+  "/api/support",
+  supportRoutes
+);
+
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
+
+/*
+  404 HANDLER
+*/
+app.use((req, res) => {
+  res.status(404).json({
+    message: "API route not found.",
+  });
+});
+
+/*
+  GLOBAL ERROR HANDLER
+*/
+app.use(
+  (error, req, res, next) => {
+    console.error(
+      "GLOBAL SERVER ERROR:",
+      error
+    );
 
     res.status(500).json({
-      message: "Server error.",
+      message:
+        "Internal server error.",
     });
   }
-});
+);
 
-// API 404 handler
-app.use("/api", (req, res) => {
-  res.status(404).json({
-    message: "API endpoint not found.",
-  });
-});
+/*
+  MONGODB CONNECTION
+*/
+const startServer = async () => {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error(
+        "MONGO_URI is missing in .env"
+      );
+    }
 
-// Global error handler
-app.use((error, req, res, next) => {
-  console.error("GLOBAL SERVER ERROR:", error.message);
+    if (!process.env.JWT_SECRET) {
+      throw new Error(
+        "JWT_SECRET is missing in .env"
+      );
+    }
 
-  if (error.message === "CORS origin not allowed.") {
-    return res.status(403).json({
-      message: "Request origin is not allowed.",
-    });
-  }
+    if (!process.env.RAZORPAY_KEY_ID) {
+      throw new Error(
+        "RAZORPAY_KEY_ID is missing in .env"
+      );
+    }
 
-  if (error.type === "entity.too.large") {
-    return res.status(413).json({
-      message: "Request payload is too large.",
-    });
-  }
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      throw new Error(
+        "RAZORPAY_KEY_SECRET is missing in .env"
+      );
+    }
 
-  if (
-    error instanceof SyntaxError &&
-    error.status === 400 &&
-    error.type === "entity.parse.failed"
-  ) {
-    return res.status(400).json({
-      message: "Invalid JSON request.",
-    });
-  }
+    await mongoose.connect(
+      process.env.MONGO_URI
+    );
 
-  res.status(500).json({
-    message: "Internal server error.",
-  });
-});
-
-// MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected successfully ✅");
+    console.log(
+      "MongoDB connected successfully."
+    );
 
     app.listen(PORT, () => {
       console.log(
-        `FITPULSE Backend running on port ${PORT}`
+        `FITPULSE server running on port ${PORT}`
       );
     });
-  })
-  .catch((error) => {
-    console.error("MongoDB connection failed ❌");
+  } catch (error) {
     console.error(
-      "MongoDB ERROR DETAILS:",
+      "SERVER START ERROR:",
       error.message
-    );
-    console.error(
-      "MongoDB ERROR CODE:",
-      error.code || "N/A"
     );
 
     process.exit(1);
-  });
+  }
+};
+
+startServer();

@@ -36,6 +36,13 @@ const notificationSchema = new mongoose.Schema(
       default: "SYSTEM",
     },
 
+    referenceKey: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 200,
+    },
+
     read: {
       type: Boolean,
       default: false,
@@ -46,4 +53,7 @@ const notificationSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Notification", notificationSchema);
+module.exports = mongoose.model(
+  "Notification",
+  notificationSchema
+);

@@ -2,7 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 const Workout = require("../models/Workout");
-const Notification = require("../models/Notification");
+const createNotification = require("../utils/notificationHelper");
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -341,31 +341,146 @@ router.post(
         });
 
       /*
-        CREATE NOTIFICATION
-        Only completed workouts create
-        a workout notification.
+        COMPLETED WORKOUT NOTIFICATION
       */
       if (finalStatus === "COMPLETED") {
+        await createNotification({
+          userId,
+          title: "Workout completed",
+          message: `${workout.title} completed successfully. You burned approximately ${finalCalories} calories.`,
+          type: "WORKOUT",
+          referenceKey: `workout-${workout._id}`,
+        });
+
+        /*
+          WEEKLY GOAL PROGRESS
+        */
+
         try {
-          await Notification.create({
-            user: userId,
-            title: "Workout completed",
-            message: `${
-              workout.title
-            } completed successfully. You burned approximately ${
-              finalCalories
-            } calories.`,
-            type: "WORKOUT",
-            read: false,
-          });
-        } catch (notificationError) {
+          const now = new Date();
+
+          const startOfWeek =
+            new Date(now);
+
+          const day =
+            startOfWeek.getDay();
+
+          const difference =
+            day === 0
+              ? 6
+              : day - 1;
+
+          startOfWeek.setDate(
+            startOfWeek.getDate() -
+              difference
+          );
+
+          startOfWeek.setHours(
+            0,
+            0,
+            0,
+            0
+          );
+
           /*
-            Notification failure should not
-            make a successfully saved workout fail.
+            Use Monday's date as the
+            unique weekly identifier.
           */
+          const weekKey =
+            startOfWeek
+              .toISOString()
+              .slice(0, 10);
+
+          const weeklyWorkouts =
+            await Workout.find({
+              user: userId,
+              status: "COMPLETED",
+              completedAt: {
+                $gte: startOfWeek,
+                $lte: now,
+              },
+            });
+
+          const weeklyCalories =
+            weeklyWorkouts.reduce(
+              (total, item) =>
+                total +
+                (Number(
+                  item.calories
+                ) || 0),
+              0
+            );
+
+          const weeklySessions =
+            weeklyWorkouts.length;
+
+          const activeZoneTime =
+            weeklyWorkouts.reduce(
+              (total, item) =>
+                total +
+                (Number(
+                  item.durationMinutes
+                ) || 0),
+              0
+            );
+
+          /*
+            WEEKLY CALORIE GOAL
+          */
+          if (
+            weeklyCalories >= 18000
+          ) {
+            await createNotification({
+              userId,
+              title:
+                "Weekly calorie goal completed",
+              message:
+                "You reached your weekly calorie target of 18,000 kcal. Great work staying consistent.",
+              type: "GOAL",
+              referenceKey:
+                `goal-calories-${weekKey}`,
+            });
+          }
+
+          /*
+            WEEKLY SESSION GOAL
+          */
+          if (
+            weeklySessions >= 6
+          ) {
+            await createNotification({
+              userId,
+              title:
+                "Weekly workout goal completed",
+              message:
+                "You completed 6 workout sessions this week. Your training consistency is on track.",
+              type: "GOAL",
+              referenceKey:
+                `goal-sessions-${weekKey}`,
+            });
+          }
+
+          /*
+            ACTIVE ZONE TIME GOAL
+          */
+          if (
+            activeZoneTime >= 300
+          ) {
+            await createNotification({
+              userId,
+              title:
+                "Active zone goal completed",
+              message:
+                "You reached 300 active minutes this week. Keep pushing your performance forward.",
+              type: "GOAL",
+              referenceKey:
+                `goal-active-time-${weekKey}`,
+            });
+          }
+        } catch (goalNotificationError) {
           console.error(
-            "CREATE WORKOUT NOTIFICATION ERROR:",
-            notificationError
+            "CREATE GOAL NOTIFICATION ERROR:",
+            goalNotificationError
           );
         }
       }

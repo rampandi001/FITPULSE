@@ -59,27 +59,43 @@ function Pricing({ navigate }) {
     },
   ];
 
-  const [currentPlan, setCurrentPlan] = useState("CORE");
+  const [currentPlan, setCurrentPlan] =
+    useState("CORE");
+
   const [subscriptionStatus, setSubscriptionStatus] =
     useState("ACTIVE");
 
-  const [paymentPlan, setPaymentPlan] = useState(null);
+  const [paymentPlan, setPaymentPlan] =
+    useState(null);
+
   const [paymentMethod, setPaymentMethod] =
     useState("UPI");
+
   const [paymentStep, setPaymentStep] =
     useState("method");
+
   const [processing, setProcessing] =
     useState(false);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
 
   const getToken = () =>
-    localStorage.getItem("fitpulse_token");
+    localStorage.getItem(
+      "fitpulse_token"
+    );
 
   const handleUnauthorized = () => {
-    localStorage.removeItem("fitpulse_token");
-    localStorage.removeItem("fitpulse_user");
+    localStorage.removeItem(
+      "fitpulse_token"
+    );
+
+    localStorage.removeItem(
+      "fitpulse_user"
+    );
 
     navigate("signin");
   };
@@ -111,7 +127,8 @@ function Pricing({ navigate }) {
         return;
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -131,7 +148,8 @@ function Pricing({ navigate }) {
       setCurrentPlan(plan);
 
       setSubscriptionStatus(
-        subscription.status || "ACTIVE"
+        subscription.status ||
+          "ACTIVE"
       );
     } catch (err) {
       console.error(
@@ -151,9 +169,10 @@ function Pricing({ navigate }) {
   useEffect(() => {
     loadSubscription();
 
-    const handleSubscriptionUpdate = () => {
-      loadSubscription();
-    };
+    const handleSubscriptionUpdate =
+      () => {
+        loadSubscription();
+      };
 
     window.addEventListener(
       "fitpulse-subscription-updated",
@@ -193,6 +212,59 @@ function Pricing({ navigate }) {
     setError("");
   };
 
+  const verifyPayment = async ({
+    orderId,
+    paymentId,
+    signature,
+    plan,
+    method,
+  }) => {
+    const token = getToken();
+
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    const response = await fetch(
+      "https://fitpulse-feid.onrender.com/api/subscription/verify-payment",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          razorpay_order_id: orderId,
+          razorpay_payment_id:
+            paymentId,
+          razorpay_signature:
+            signature,
+          plan,
+          paymentMethod: method,
+        }),
+      }
+    );
+
+    if (response.status === 401) {
+      handleUnauthorized();
+      return;
+    }
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          "Payment verification failed."
+      );
+    }
+
+    return data;
+  };
+
   const handlePayment = async () => {
     if (!paymentPlan) {
       return;
@@ -205,101 +277,284 @@ function Pricing({ navigate }) {
       return;
     }
 
+    if (
+      typeof window.Razorpay !==
+      "function"
+    ) {
+      setError(
+        "Razorpay Checkout failed to load. Please refresh the page and try again."
+      );
+
+      return;
+    }
+
     try {
       setProcessing(true);
       setPaymentStep("processing");
       setError("");
 
       /*
-       * TEMPORARY BACKEND SUBSCRIPTION ACTIVATION
-       *
-       * Real Razorpay payment will replace this
-       * in the next step.
-       */
-      const response = await fetch(
-        "https://fitpulse-feid.onrender.com/api/subscription",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            plan: paymentPlan.name,
-            amount: paymentPlan.price,
-            paymentMethod,
-          }),
-        }
-      );
+        STEP 1
+        Create Razorpay order
+      */
+      const orderResponse =
+        await fetch(
+          "https://fitpulse-feid.onrender.com/api/subscription/create-order",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              plan: paymentPlan.name,
+              paymentMethod,
+            }),
+          }
+        );
 
-      if (response.status === 401) {
+      if (
+        orderResponse.status ===
+        401
+      ) {
         handleUnauthorized();
         return;
       }
 
-      const data = await response.json();
+      const orderData =
+        await orderResponse.json();
 
-      if (!response.ok) {
+      if (!orderResponse.ok) {
         throw new Error(
-          data.message ||
-            "Subscription update failed."
+          orderData.message ||
+            "Failed to create payment order."
         );
       }
-
-      const subscription =
-        data.subscription || data;
-
-      setCurrentPlan(
-        subscription.plan ||
-          paymentPlan.name
-      );
-
-      setSubscriptionStatus(
-        subscription.status || "ACTIVE"
-      );
 
       /*
-       * Keep localStorage only as a local cache.
-       * Backend remains the source of truth.
-       */
-      localStorage.setItem(
-        "fitpulse_subscription",
-        subscription.plan ||
-          paymentPlan.name
-      );
+        STEP 2
+        Open Razorpay Checkout
+      */
+      const options = {
+        key: orderData.keyId,
 
-      localStorage.setItem(
-        "fitpulse_subscription_updated",
-        new Date().toISOString()
-      );
+        amount:
+          orderData.order.amount,
 
-      if (data.transactionId) {
-        localStorage.setItem(
-          "fitpulse_last_transaction",
-          JSON.stringify({
-            id: data.transactionId,
-            plan:
+        currency:
+          orderData.order.currency,
+
+        name: "FITPULSE",
+
+        description: `${paymentPlan.name} Membership`,
+
+        order_id:
+          orderData.order.id,
+
+        handler: async (
+          razorpayResponse
+        ) => {
+          try {
+            setProcessing(true);
+            setPaymentStep(
+              "processing"
+            );
+            setError("");
+
+            /*
+              STEP 3
+              Verify payment on backend
+            */
+            const data =
+              await verifyPayment({
+                orderId:
+                  razorpayResponse.razorpay_order_id,
+
+                paymentId:
+                  razorpayResponse.razorpay_payment_id,
+
+                signature:
+                  razorpayResponse.razorpay_signature,
+
+                plan:
+                  paymentPlan.name,
+
+                method:
+                  paymentMethod,
+              });
+
+            const subscription =
+              data.subscription ||
+              {};
+
+            setCurrentPlan(
               subscription.plan ||
-              paymentPlan.name,
-            amount:
-              paymentPlan.price,
-            method: paymentMethod,
-            status:
-              subscription.status ||
-              "ACTIVE",
-            paidAt:
-              new Date().toISOString(),
-          })
-        );
-      }
+                paymentPlan.name
+            );
 
-      window.dispatchEvent(
-        new Event(
-          "fitpulse-subscription-updated"
-        )
+            setSubscriptionStatus(
+              subscription.status ||
+                "ACTIVE"
+            );
+
+            /*
+              Local cache only.
+              Backend remains
+              source of truth.
+            */
+            localStorage.setItem(
+              "fitpulse_subscription",
+              subscription.plan ||
+                paymentPlan.name
+            );
+
+            localStorage.setItem(
+              "fitpulse_subscription_updated",
+              new Date().toISOString()
+            );
+
+            localStorage.setItem(
+              "fitpulse_last_transaction",
+              JSON.stringify({
+                id:
+                  razorpayResponse.razorpay_payment_id,
+
+                orderId:
+                  razorpayResponse.razorpay_order_id,
+
+                plan:
+                  subscription.plan ||
+                  paymentPlan.name,
+
+                amount:
+                  paymentPlan.price,
+
+                method:
+                  paymentMethod,
+
+                status:
+                  subscription.status ||
+                  "ACTIVE",
+
+                paidAt:
+                  new Date().toISOString(),
+              })
+            );
+
+            window.dispatchEvent(
+              new Event(
+                "fitpulse-subscription-updated"
+              )
+            );
+
+            setPaymentStep(
+              "success"
+            );
+          } catch (verificationError) {
+            console.error(
+              "PAYMENT VERIFICATION ERROR:",
+              verificationError
+            );
+
+            setError(
+              verificationError.message ||
+                "Payment verification failed."
+            );
+
+            setPaymentStep(
+              "method"
+            );
+          } finally {
+            setProcessing(false);
+          }
+        },
+
+        modal: {
+          ondismiss: () => {
+            setProcessing(false);
+            setPaymentStep(
+              "method"
+            );
+          },
+        },
+
+        prefill: {
+          name:
+            localStorage.getItem(
+              "fitpulse_user"
+            )
+              ? (() => {
+                  try {
+                    const user =
+                      JSON.parse(
+                        localStorage.getItem(
+                          "fitpulse_user"
+                        )
+                      );
+
+                    return (
+                      user.name || ""
+                    );
+                  } catch {
+                    return "";
+                  }
+                })()
+              : "",
+
+          email:
+            localStorage.getItem(
+              "fitpulse_user"
+            )
+              ? (() => {
+                  try {
+                    const user =
+                      JSON.parse(
+                        localStorage.getItem(
+                          "fitpulse_user"
+                        )
+                      );
+
+                    return (
+                      user.email || ""
+                    );
+                  } catch {
+                    return "";
+                  }
+                })()
+              : "",
+        },
+
+        theme: {
+          color: "#00ff88",
+        },
+      };
+
+      const razorpay =
+        new window.Razorpay(
+          options
+        );
+
+      razorpay.on(
+        "payment.failed",
+        (response) => {
+          console.error(
+            "RAZORPAY PAYMENT FAILED:",
+            response
+          );
+
+          setProcessing(false);
+          setPaymentStep("method");
+
+          setError(
+            response?.error
+              ?.description ||
+              "Payment failed. Please try again."
+          );
+        }
       );
 
-      setPaymentStep("success");
+      razorpay.open();
     } catch (err) {
       console.error(
         "SUBSCRIPTION PAYMENT ERROR:",
@@ -311,10 +566,8 @@ function Pricing({ navigate }) {
 
       setError(
         err.message ||
-          "Unable to update subscription."
+          "Unable to start payment."
       );
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -347,7 +600,8 @@ function Pricing({ navigate }) {
           <div className="billing-status">
             <span className="status-dot" />
 
-            CURRENT PLAN: {loading
+            CURRENT PLAN:{" "}
+            {loading
               ? "LOADING..."
               : currentPlan}
           </div>
@@ -368,7 +622,8 @@ function Pricing({ navigate }) {
             <section className="pricing-plans">
               {plans.map((plan) => {
                 const isCurrent =
-                  plan.name === currentPlan;
+                  plan.name ===
+                  currentPlan;
 
                 return (
                   <div
@@ -390,7 +645,8 @@ function Pricing({ navigate }) {
                     )}
 
                     <div className="pricing-icon">
-                      {plan.name === "ELITE" ? (
+                      {plan.name ===
+                      "ELITE" ? (
                         <Crown size={19} />
                       ) : (
                         <Zap size={19} />
@@ -441,9 +697,13 @@ function Pricing({ navigate }) {
                           ? "pricing-button current"
                           : "pricing-button"
                       }
-                      disabled={isCurrent}
+                      disabled={
+                        isCurrent
+                      }
                       onClick={() =>
-                        openPayment(plan)
+                        openPayment(
+                          plan
+                        )
                       }
                     >
                       {isCurrent
@@ -458,7 +718,8 @@ function Pricing({ navigate }) {
             <section className="subscription-details">
               <div>
                 <p>
-                  YOUR CURRENT SUBSCRIPTION
+                  YOUR CURRENT
+                  SUBSCRIPTION
                 </p>
 
                 <h2>
@@ -468,7 +729,8 @@ function Pricing({ navigate }) {
                 </h2>
 
                 <span>
-                  {currentPlan === "CORE"
+                  {currentPlan ===
+                  "CORE"
                     ? "Free membership active"
                     : `${currentPlan} membership active`}
                 </span>
@@ -504,7 +766,9 @@ function Pricing({ navigate }) {
               <button
                 type="button"
                 className="payment-close"
-                onClick={closePayment}
+                onClick={
+                  closePayment
+                }
                 disabled={processing}
               >
                 ×
@@ -516,7 +780,9 @@ function Pricing({ navigate }) {
               <>
                 <div className="payment-header">
                   <div className="payment-title-icon">
-                    <CreditCard size={20} />
+                    <CreditCard
+                      size={20}
+                    />
                   </div>
 
                   <div>
@@ -547,7 +813,10 @@ function Pricing({ navigate }) {
                     </span>
 
                     <strong>
-                      ₹{paymentPlan.price}
+                      ₹
+                      {
+                        paymentPlan.price
+                      }
                     </strong>
                   </div>
                 </div>
@@ -556,7 +825,8 @@ function Pricing({ navigate }) {
                   <button
                     type="button"
                     className={
-                      paymentMethod === "UPI"
+                      paymentMethod ===
+                      "UPI"
                         ? "payment-method active"
                         : "payment-method"
                     }
@@ -566,7 +836,9 @@ function Pricing({ navigate }) {
                       )
                     }
                   >
-                    <Smartphone size={19} />
+                    <Smartphone
+                      size={19}
+                    />
 
                     <div>
                       <strong>
@@ -574,8 +846,9 @@ function Pricing({ navigate }) {
                       </strong>
 
                       <span>
-                        Google Pay · PhonePe
-                        · Paytm
+                        Google Pay ·
+                        PhonePe ·
+                        Paytm
                       </span>
                     </div>
 
@@ -588,7 +861,8 @@ function Pricing({ navigate }) {
                   <button
                     type="button"
                     className={
-                      paymentMethod === "CARD"
+                      paymentMethod ===
+                      "CARD"
                         ? "payment-method active"
                         : "payment-method"
                     }
@@ -598,15 +872,19 @@ function Pricing({ navigate }) {
                       )
                     }
                   >
-                    <CreditCard size={19} />
+                    <CreditCard
+                      size={19}
+                    />
 
                     <div>
                       <strong>
-                        CREDIT / DEBIT CARD
+                        CREDIT / DEBIT
+                        CARD
                       </strong>
 
                       <span>
-                        Visa · Mastercard ·
+                        Visa ·
+                        Mastercard ·
                         RuPay
                       </span>
                     </div>
@@ -624,23 +902,32 @@ function Pricing({ navigate }) {
                   </span>
 
                   <strong>
-                    ₹{paymentPlan.price}
+                    ₹
+                    {
+                      paymentPlan.price
+                    }
                   </strong>
                 </div>
 
                 <button
                   type="button"
                   className="pay-now-button"
-                  onClick={handlePayment}
+                  onClick={
+                    handlePayment
+                  }
+                  disabled={processing}
                 >
                   PAY ₹
-                  {paymentPlan.price}
+                  {
+                    paymentPlan.price
+                  }
                 </button>
 
                 <p className="payment-note">
-                  Backend subscription activation
-                  is connected. Real Razorpay payment
-                  will be added next.
+                  Secure Razorpay
+                  test checkout will
+                  open after clicking
+                  pay.
                 </p>
               </>
             )}
@@ -659,8 +946,8 @@ function Pricing({ navigate }) {
                 </h2>
 
                 <span>
-                  Updating your subscription
-                  securely.
+                  Verifying your
+                  payment securely.
                 </span>
               </div>
             )}
@@ -669,21 +956,26 @@ function Pricing({ navigate }) {
               "success" && (
               <div className="payment-success">
                 <div className="success-icon">
-                  <CheckCircle2 size={34} />
+                  <CheckCircle2
+                    size={34}
+                  />
                 </div>
 
                 <p>
-                  SUBSCRIPTION UPDATED
+                  SUBSCRIPTION
+                  ACTIVATED
                 </p>
 
                 <h2>
-                  {paymentPlan.name} PLAN
-                  ACTIVATED
+                  {paymentPlan.name}{" "}
+                  PLAN ACTIVATED
                 </h2>
 
                 <span>
-                  Your FITPULSE subscription
-                  has been updated successfully.
+                  Your FITPULSE
+                  subscription has
+                  been activated
+                  successfully.
                 </span>
 
                 <div className="transaction-box">
@@ -704,10 +996,10 @@ function Pricing({ navigate }) {
 
                           return (
                             transaction.id ||
-                            "BACKEND"
+                            "RAZORPAY"
                           );
                         } catch {
-                          return "BACKEND";
+                          return "RAZORPAY";
                         }
                       })()}
                     </strong>
@@ -719,7 +1011,10 @@ function Pricing({ navigate }) {
                     </span>
 
                     <strong>
-                      ₹{paymentPlan.price}
+                      ₹
+                      {
+                        paymentPlan.price
+                      }
                     </strong>
                   </div>
 
@@ -754,4 +1049,3 @@ function Pricing({ navigate }) {
 }
 
 export default Pricing;
-

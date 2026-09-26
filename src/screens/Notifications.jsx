@@ -2,10 +2,19 @@ import { useEffect, useState } from "react";
 
 import {
   Bell,
+  CheckCircle2,
+  Dumbbell,
+  Flame,
+  Goal,
   Settings,
+  Trophy,
+  UserRound,
+  XCircle,
 } from "lucide-react";
 
 import Sidebar from "../components/Sidebar";
+
+const API_BASE_URL = "https://fitpulse-feid.onrender.com";
 
 function Notifications({ navigate }) {
   const [notifications, setNotifications] = useState([]);
@@ -18,10 +27,162 @@ function Notifications({ navigate }) {
 
   const [loading, setLoading] = useState(true);
   const [savingPreferences, setSavingPreferences] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
   const [error, setError] = useState("");
 
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case "WORKOUT":
+        return Dumbbell;
+
+      case "GOAL":
+        return Goal;
+
+      case "PROGRESS":
+        return Trophy;
+
+      case "SUBSCRIPTION":
+        return CheckCircle2;
+
+      case "COMMUNITY":
+        return UserRound;
+
+      case "SYSTEM":
+        return Bell;
+
+      default:
+        return Bell;
+    }
+  };
+
+  const formatNotificationTime = (createdAt) => {
+    if (!createdAt) {
+      return "--";
+    }
+
+    const date = new Date(createdAt);
+
+    if (Number.isNaN(date.getTime())) {
+      return "--";
+    }
+
+    const now = new Date();
+    const diffInSeconds = Math.floor(
+      (now.getTime() - date.getTime()) / 1000
+    );
+
+    if (diffInSeconds < 60) {
+      return "Just now";
+    }
+
+    const diffInMinutes = Math.floor(
+      diffInSeconds / 60
+    );
+
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}m ago`;
+    }
+
+    const diffInHours = Math.floor(
+      diffInMinutes / 60
+    );
+
+    if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    }
+
+    const diffInDays = Math.floor(
+      diffInHours / 24
+    );
+
+    if (diffInDays === 1) {
+      return "Yesterday";
+    }
+
+    if (diffInDays < 7) {
+      return `${diffInDays}d ago`;
+    }
+
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const isToday = (createdAt) => {
+    if (!createdAt) {
+      return false;
+    }
+
+    const date = new Date(createdAt);
+
+    if (Number.isNaN(date.getTime())) {
+      return false;
+    }
+
+    const now = new Date();
+
+    return (
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear()
+    );
+  };
+
+  const loadNotifications = async () => {
+    const token = localStorage.getItem("fitpulse_token");
+
+    if (!token) {
+      navigate("signin");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/notifications`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem("fitpulse_token");
+        localStorage.removeItem("fitpulse_user");
+        navigate("signin");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          "Failed to load notifications."
+        );
+      }
+
+      const data = await response.json();
+
+      setNotifications(
+        Array.isArray(data.notifications)
+          ? data.notifications
+          : []
+      );
+    } catch (error) {
+      console.error(
+        "NOTIFICATIONS LOAD ERROR:",
+        error
+      );
+
+      setError(
+        "Unable to load notifications."
+      );
+    }
+  };
+
   useEffect(() => {
-    const loadPreferences = async () => {
+    const loadData = async () => {
       const token = localStorage.getItem("fitpulse_token");
 
       if (!token) {
@@ -33,33 +194,77 @@ function Notifications({ navigate }) {
       setError("");
 
       try {
-        const response = await fetch(
-          "https://fitpulse-feid.onrender.com/api/settings",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const [
+          notificationResponse,
+          settingsResponse,
+        ] = await Promise.all([
+          fetch(
+            `${API_BASE_URL}/api/notifications`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          ),
 
-        if (response.status === 401) {
-          localStorage.removeItem("fitpulse_token");
-          localStorage.removeItem("fitpulse_user");
+          fetch(
+            `${API_BASE_URL}/api/settings`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          ),
+        ]);
+
+        if (
+          notificationResponse.status === 401 ||
+          settingsResponse.status === 401
+        ) {
+          localStorage.removeItem(
+            "fitpulse_token"
+          );
+          localStorage.removeItem(
+            "fitpulse_user"
+          );
           navigate("signin");
           return;
         }
 
-        if (!response.ok) {
+        if (!notificationResponse.ok) {
+          throw new Error(
+            "Failed to load notifications."
+          );
+        }
+
+        if (!settingsResponse.ok) {
           throw new Error(
             "Failed to load notification settings."
           );
         }
 
-        const data = await response.json();
+        const notificationData =
+          await notificationResponse.json();
 
-        if (typeof data.notifications === "boolean") {
-          const enabled = data.notifications;
+        const settingsData =
+          await settingsResponse.json();
+
+        setNotifications(
+          Array.isArray(
+            notificationData.notifications
+          )
+            ? notificationData.notifications
+            : []
+        );
+
+        if (
+          typeof settingsData.notifications ===
+          "boolean"
+        ) {
+          const enabled =
+            settingsData.notifications;
 
           setPreferences({
             workoutReminders: enabled,
@@ -69,30 +274,33 @@ function Notifications({ navigate }) {
         }
       } catch (error) {
         console.error(
-          "NOTIFICATION SETTINGS LOAD ERROR:",
+          "NOTIFICATION PAGE LOAD ERROR:",
           error
         );
 
         setError(
-          "Unable to load notification preferences."
+          "Unable to load notification data."
         );
       } finally {
         setLoading(false);
       }
     };
 
-    loadPreferences();
+    loadData();
   }, [navigate]);
 
   const togglePreference = async (key) => {
-    const token = localStorage.getItem("fitpulse_token");
+    const token = localStorage.getItem(
+      "fitpulse_token"
+    );
 
     if (!token) {
       navigate("signin");
       return;
     }
 
-    const previousPreferences = preferences;
+    const previousPreferences =
+      preferences;
 
     const nextPreferences = {
       ...preferences,
@@ -110,7 +318,7 @@ function Notifications({ navigate }) {
         nextPreferences.recoveryAlerts;
 
       const response = await fetch(
-        "https://fitpulse-feid.onrender.com/api/settings",
+        `${API_BASE_URL}/api/settings`,
         {
           method: "PUT",
           headers: {
@@ -124,8 +332,12 @@ function Notifications({ navigate }) {
       );
 
       if (response.status === 401) {
-        localStorage.removeItem("fitpulse_token");
-        localStorage.removeItem("fitpulse_user");
+        localStorage.removeItem(
+          "fitpulse_token"
+        );
+        localStorage.removeItem(
+          "fitpulse_user"
+        );
         navigate("signin");
         return;
       }
@@ -145,7 +357,10 @@ function Notifications({ navigate }) {
         error
       );
 
-      setPreferences(previousPreferences);
+      setPreferences(
+        previousPreferences
+      );
+
       setError(
         "Unable to save notification preference."
       );
@@ -154,8 +369,137 @@ function Notifications({ navigate }) {
     }
   };
 
-  const unreadCount = 0;
-  const todayCount = 0;
+  const markNotificationAsRead = async (
+    notificationId
+  ) => {
+    const token = localStorage.getItem(
+      "fitpulse_token"
+    );
+
+    if (!token) {
+      navigate("signin");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/notifications/${notificationId}/read`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem(
+          "fitpulse_token"
+        );
+        localStorage.removeItem(
+          "fitpulse_user"
+        );
+        navigate("signin");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          "Failed to mark notification as read."
+        );
+      }
+
+      setNotifications((current) =>
+        current.map((notification) =>
+          notification._id === notificationId
+            ? {
+                ...notification,
+                read: true,
+              }
+            : notification
+        )
+      );
+    } catch (error) {
+      console.error(
+        "MARK NOTIFICATION READ ERROR:",
+        error
+      );
+
+      setError(
+        "Unable to update notification."
+      );
+    }
+  };
+
+  const markAllAsRead = async () => {
+    const token = localStorage.getItem(
+      "fitpulse_token"
+    );
+
+    if (!token) {
+      navigate("signin");
+      return;
+    }
+
+    setMarkingAllRead(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/notifications/read-all`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem(
+          "fitpulse_token"
+        );
+        localStorage.removeItem(
+          "fitpulse_user"
+        );
+        navigate("signin");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          "Failed to mark all notifications as read."
+        );
+      }
+
+      setNotifications((current) =>
+        current.map((notification) => ({
+          ...notification,
+          read: true,
+        }))
+      );
+    } catch (error) {
+      console.error(
+        "MARK ALL NOTIFICATIONS ERROR:",
+        error
+      );
+
+      setError(
+        "Unable to mark notifications as read."
+      );
+    } finally {
+      setMarkingAllRead(false);
+    }
+  };
+
+  const unreadCount = notifications.filter(
+    (notification) => !notification.read
+  ).length;
+
+  const todayCount = notifications.filter(
+    (notification) =>
+      isToday(notification.createdAt)
+  ).length;
 
   return (
     <div className="app-shell">
@@ -168,18 +512,28 @@ function Notifications({ navigate }) {
         <header className="notifications-header">
           <div>
             <p>ALERT CENTER</p>
+
             <h1>NOTIFICATIONS</h1>
+
             <span>
-              Stay updated with your training and performance.
+              Stay updated with your training and
+              performance.
             </span>
           </div>
 
           <button
             type="button"
             className="mark-read-button"
-            disabled
+            onClick={markAllAsRead}
+            disabled={
+              loading ||
+              markingAllRead ||
+              unreadCount === 0
+            }
           >
-            MARK ALL AS READ
+            {markingAllRead
+              ? "MARKING..."
+              : "MARK ALL AS READ"}
           </button>
         </header>
 
@@ -192,20 +546,29 @@ function Notifications({ navigate }) {
         <section className="notification-summary">
           <div>
             <span>UNREAD</span>
+
             <strong>
-              {String(unreadCount).padStart(2, "0")}
+              {String(unreadCount).padStart(
+                2,
+                "0"
+              )}
             </strong>
           </div>
 
           <div>
             <span>TODAY</span>
+
             <strong>
-              {String(todayCount).padStart(2, "0")}
+              {String(todayCount).padStart(
+                2,
+                "0"
+              )}
             </strong>
           </div>
 
           <div>
             <span>TOTAL ALERTS</span>
+
             <strong>
               {notifications.length}
             </strong>
@@ -216,6 +579,7 @@ function Notifications({ navigate }) {
           <div className="notification-section-heading">
             <div>
               <p>RECENT ACTIVITY</p>
+
               <h2>ALL NOTIFICATIONS</h2>
             </div>
 
@@ -226,7 +590,7 @@ function Notifications({ navigate }) {
 
           {loading ? (
             <div className="settings-loading">
-              Loading notification settings...
+              Loading notifications...
             </div>
           ) : notifications.length === 0 ? (
             <div className="notification-list">
@@ -243,8 +607,9 @@ function Notifications({ navigate }) {
                   <h3>No notifications yet</h3>
 
                   <p>
-                    Notification records will appear here when
-                    the backend notification system is available.
+                    New workout, goal, progress,
+                    subscription and system alerts
+                    will appear here.
                   </p>
                 </div>
 
@@ -255,38 +620,66 @@ function Notifications({ navigate }) {
             </div>
           ) : (
             <div className="notification-list">
-              {notifications.map((notification, index) => {
-                const Icon = notification.icon;
+              {notifications.map(
+                (notification) => {
+                  const Icon =
+                    getNotificationIcon(
+                      notification.type
+                    );
 
-                return (
-                  <div
-                    className={`notification-item ${
-                      notification.unread ? "unread" : ""
-                    }`}
-                    key={index}
-                  >
-                    <div className="notification-icon">
-                      <Icon size={18} />
-                    </div>
-
-                    <div className="notification-content">
-                      <div className="notification-title">
-                        <span>{notification.type}</span>
-
-                        {notification.unread && <i />}
+                  return (
+                    <button
+                      type="button"
+                      className={`notification-item ${
+                        !notification.read
+                          ? "unread"
+                          : ""
+                      }`}
+                      key={notification._id}
+                      onClick={() => {
+                        if (
+                          !notification.read
+                        ) {
+                          markNotificationAsRead(
+                            notification._id
+                          );
+                        }
+                      }}
+                    >
+                      <div className="notification-icon">
+                        <Icon size={18} />
                       </div>
 
-                      <h3>{notification.title}</h3>
+                      <div className="notification-content">
+                        <div className="notification-title">
+                          <span>
+                            {notification.type ||
+                              "SYSTEM"}
+                          </span>
 
-                      <p>{notification.text}</p>
-                    </div>
+                          {!notification.read && (
+                            <i />
+                          )}
+                        </div>
 
-                    <div className="notification-time">
-                      {notification.time}
-                    </div>
-                  </div>
-                );
-              })}
+                        <h3>
+                          {notification.title}
+                        </h3>
+
+                        <p>
+                          {notification.message}
+                        </p>
+                      </div>
+
+                      <div className="notification-time">
+                        {formatNotificationTime(
+                          notification.createdAt
+                        )}
+                      </div>
+                    </button>
+                  );
+                }
+              )}
             </div>
           )}
         </section>
@@ -299,15 +692,22 @@ function Notifications({ navigate }) {
 
             <div>
               <p>CONTROL CENTER</p>
-              <h2>NOTIFICATION PREFERENCES</h2>
+
+              <h2>
+                NOTIFICATION PREFERENCES
+              </h2>
             </div>
           </div>
 
           <div className="notification-setting-row">
             <div>
-              <strong>Workout Reminders</strong>
+              <strong>
+                Workout Reminders
+              </strong>
+
               <span>
-                Receive alerts before scheduled workouts.
+                Receive alerts before scheduled
+                workouts.
               </span>
             </div>
 
@@ -319,10 +719,13 @@ function Notifications({ navigate }) {
                   : "toggle"
               }
               onClick={() =>
-                togglePreference("workoutReminders")
+                togglePreference(
+                  "workoutReminders"
+                )
               }
               disabled={
-                loading || savingPreferences
+                loading ||
+                savingPreferences
               }
               aria-label="Toggle workout reminders"
               aria-pressed={
@@ -335,9 +738,13 @@ function Notifications({ navigate }) {
 
           <div className="notification-setting-row">
             <div>
-              <strong>Goal Updates</strong>
+              <strong>
+                Goal Updates
+              </strong>
+
               <span>
-                Get notified about your training milestones.
+                Get notified about your training
+                milestones.
               </span>
             </div>
 
@@ -349,10 +756,13 @@ function Notifications({ navigate }) {
                   : "toggle"
               }
               onClick={() =>
-                togglePreference("goalUpdates")
+                togglePreference(
+                  "goalUpdates"
+                )
               }
               disabled={
-                loading || savingPreferences
+                loading ||
+                savingPreferences
               }
               aria-label="Toggle goal updates"
               aria-pressed={
@@ -365,9 +775,13 @@ function Notifications({ navigate }) {
 
           <div className="notification-setting-row">
             <div>
-              <strong>Recovery Alerts</strong>
+              <strong>
+                Recovery Alerts
+              </strong>
+
               <span>
-                Receive important recovery and readiness updates.
+                Receive important recovery and
+                readiness updates.
               </span>
             </div>
 
@@ -379,10 +793,13 @@ function Notifications({ navigate }) {
                   : "toggle"
               }
               onClick={() =>
-                togglePreference("recoveryAlerts")
+                togglePreference(
+                  "recoveryAlerts"
+                )
               }
               disabled={
-                loading || savingPreferences
+                loading ||
+                savingPreferences
               }
               aria-label="Toggle recovery alerts"
               aria-pressed={

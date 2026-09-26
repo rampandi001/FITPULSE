@@ -1,6 +1,5 @@
 import {
   Activity,
-  ArrowLeft,
   ArrowRight,
   BarChart3,
   BrainCircuit,
@@ -9,7 +8,6 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-
 
 function Features({ navigate }) {
   const features = [
@@ -65,68 +63,102 @@ function Features({ navigate }) {
 
   return (
     <div className="features-page">
+
       {/* ================= NAVBAR ================= */}
 
-      <header className="features-navbar">
+      <header className="landing-navbar">
+
         <button
-          className="features-brand"
+          type="button"
+          className="landing-brand"
           onClick={() => navigate("landing")}
         >
-          <div className="features-brand-icon">
-            <Activity size={17} strokeWidth={3} />
-          </div>
+          <img
+            src="/images/fitpulse-logo.png"
+            alt="FITPULSE"
+            className="landing-logo-image"
+          />
 
           <span>FITPULSE</span>
         </button>
 
-        <nav className="features-nav">
-          <button onClick={() => navigate("landing")}>
-            OVERVIEW
+        <nav className="landing-navigation">
+
+          <button
+            type="button"
+            className="nav-link"
+            onClick={() => navigate("landing")}
+          >
+            Overview
           </button>
 
-          <button className="active">
-            FEATURES
+          <button
+            type="button"
+            className="nav-link active"
+            onClick={() => navigate("features")}
+          >
+            Features
           </button>
 
-          <button onClick={() => navigate("workout-plans")}>
-            WORKOUT PLANS
+          <button
+            type="button"
+            className="nav-link"
+            onClick={() => navigate("workout-plans")}
+          >
+            Workout Plans
           </button>
 
-          <button onClick={() => navigate("pricing")}>
-            PRICING
+          <button
+            type="button"
+            className="nav-link"
+            onClick={() => navigate("pricing")}
+          >
+            Pricing
           </button>
 
-          <button>
-            COMMUNITY
+          <button
+            type="button"
+            className="nav-link"
+            onClick={() => navigate("community")}
+          >
+            Community
           </button>
+
         </nav>
 
-        <div className="features-nav-actions">
+        <div className="landing-nav-actions">
+
           <button
-            className="features-login"
+            type="button"
+            className="login-button"
             onClick={() => navigate("signin")}
           >
-            LOGIN
+            Login
           </button>
 
           <button
-            className="features-join"
+            type="button"
+            className="join-button"
             onClick={() => navigate("register")}
           >
             JOIN FREE
           </button>
+
         </div>
+
       </header>
 
       {/* ================= HERO ================= */}
 
       <main>
+
         <section className="features-hero">
+
           <div className="features-hero-grid" />
 
           <div className="features-hero-content">
+
             <div className="features-back">
-              <ArrowLeft size={14} />
               PERFORMANCE ECOSYSTEM
             </div>
 
@@ -148,7 +180,9 @@ function Features({ navigate }) {
             </p>
 
             <div className="features-hero-buttons">
+
               <button
+                type="button"
                 className="features-primary-button"
                 onClick={() => navigate("register")}
               >
@@ -157,15 +191,19 @@ function Features({ navigate }) {
               </button>
 
               <button
+                type="button"
                 className="features-secondary-button"
                 onClick={() => navigate("workout-plans")}
               >
                 EXPLORE WORKOUTS
               </button>
+
             </div>
+
           </div>
 
           <div className="features-hero-stats">
+
             <div>
               <strong>120+</strong>
               <span>EXERCISES</span>
@@ -180,22 +218,28 @@ function Features({ navigate }) {
               <strong>V2.0</strong>
               <span>PERFORMANCE SYSTEM</span>
             </div>
+
           </div>
+
         </section>
 
         {/* ================= FEATURE GRID ================= */}
 
         <section className="features-section">
+
           <div className="features-section-heading">
+
             <div>
               <p>THE FITPULSE SYSTEM</p>
               <h2>BUILT FOR PERFORMANCE</h2>
             </div>
 
             <span>06 CORE SYSTEMS</span>
+
           </div>
 
           <div className="features-grid">
+
             {features.map((feature) => {
               const Icon = feature.icon;
 
@@ -204,36 +248,52 @@ function Features({ navigate }) {
                   className="feature-card"
                   key={feature.number}
                 >
+
                   <div className="feature-card-top">
+
                     <div className="feature-icon">
                       <Icon size={21} />
                     </div>
 
-                    <span>{feature.number}</span>
+                    <span>
+                      {feature.number}
+                    </span>
+
                   </div>
 
                   <div className="feature-tag">
                     {feature.tag}
                   </div>
 
-                  <h3>{feature.title}</h3>
+                  <h3>
+                    {feature.title}
+                  </h3>
 
-                  <p>{feature.description}</p>
+                  <p>
+                    {feature.description}
+                  </p>
 
                   <div className="feature-card-line">
                     <span />
                   </div>
+
                 </div>
               );
             })}
+
           </div>
+
         </section>
 
         {/* ================= PERFORMANCE BLOCK ================= */}
 
         <section className="features-performance">
+
           <div className="performance-content">
-            <p>ONE PLATFORM. COMPLETE CONTROL.</p>
+
+            <p>
+              ONE PLATFORM. COMPLETE CONTROL.
+            </p>
 
             <h2>
               TRAIN HARDER.
@@ -248,6 +308,7 @@ function Features({ navigate }) {
             </p>
 
             <div className="performance-points">
+
               <div>
                 <div>
                   <CheckIcon />
@@ -277,20 +338,29 @@ function Features({ navigate }) {
                   Long-term performance insights
                 </span>
               </div>
+
             </div>
+
           </div>
 
           <div className="performance-visual">
+
             <div className="performance-ring ring-one">
+
               <div className="performance-ring ring-two">
+
                 <div className="performance-core">
+
                   <Activity size={32} />
 
                   <strong>82</strong>
 
                   <span>READINESS</span>
+
                 </div>
+
               </div>
+
             </div>
 
             <div className="performance-floating-card top">
@@ -302,13 +372,18 @@ function Features({ navigate }) {
               <span>HEART RATE</span>
               <strong>138 BPM</strong>
             </div>
+
           </div>
+
         </section>
 
         {/* ================= CTA ================= */}
 
         <section className="features-cta">
-          <p>YOUR PERFORMANCE STARTS HERE</p>
+
+          <p>
+            YOUR PERFORMANCE STARTS HERE
+          </p>
 
           <h2>
             READY TO FIND YOUR
@@ -316,13 +391,17 @@ function Features({ navigate }) {
           </h2>
 
           <button
+            type="button"
             onClick={() => navigate("register")}
           >
             JOIN FITPULSE FREE
             <ArrowRight size={17} />
           </button>
+
         </section>
+
       </main>
+
     </div>
   );
 }

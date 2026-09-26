@@ -141,9 +141,9 @@ function Sidebar({ navigate, active = "dashboard" }) {
       <div className="sidebar-logo">
 
         <div className="sidebar-logo-mark">
-          <Activity
-            size={19}
-            strokeWidth={3}
+          <img
+            src="/images/fitpulse-logo.png"
+            alt="FITPULSE"
           />
         </div>
 

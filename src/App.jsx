@@ -24,12 +24,49 @@ import Settings from "./screens/Settings";
 import Support from "./screens/Support";
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState("landing");
+  const [currentScreen, setCurrentScreen] =
+    useState("landing");
 
+  /*
+    PUBLIC SCREENS
+    These screens can be opened without login.
+  */
+  const publicScreens = [
+    "landing",
+    "signin",
+    "register",
+    "pricing",
+  ];
+
+  /*
+    NAVIGATION
+    Protected screens automatically redirect
+    to Sign In when the user is not logged in.
+  */
   const navigate = (screen) => {
+    const token = localStorage.getItem(
+      "fitpulse_token"
+    );
+
+    /*
+      If the requested screen is not public
+      and there is no login token,
+      send the user to Sign In.
+    */
+    if (
+      !publicScreens.includes(screen) &&
+      !token
+    ) {
+      setCurrentScreen("signin");
+      return;
+    }
+
     setCurrentScreen(screen);
   };
 
+  /*
+    SCROLL TO TOP WHEN SCREEN CHANGES
+  */
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -38,69 +75,156 @@ function App() {
     });
   }, [currentScreen]);
 
+  /*
+    SCREEN ROUTING
+  */
   switch (currentScreen) {
     case "landing":
-      return <Landing navigate={navigate} />;
+      return (
+        <Landing
+          navigate={navigate}
+        />
+      );
 
     case "signin":
-      return <SignIn navigate={navigate} />;
+      return (
+        <SignIn
+          navigate={navigate}
+        />
+      );
 
     case "register":
-      return <Register navigate={navigate} />;
+      return (
+        <Register
+          navigate={navigate}
+        />
+      );
 
     case "features":
-      return <Features navigate={navigate} />;
+      return (
+        <Features
+          navigate={navigate}
+        />
+      );
 
     case "community":
-      return <Community navigate={navigate} />;
+      return (
+        <Community
+          navigate={navigate}
+        />
+      );
 
     case "dashboard":
-      return <Dashboard navigate={navigate} />;
+      return (
+        <Dashboard
+          navigate={navigate}
+        />
+      );
 
     case "workout-plans":
-      return <WorkoutPlans navigate={navigate} />;
+      return (
+        <WorkoutPlans
+          navigate={navigate}
+        />
+      );
 
     case "plan-details":
-      return <PlanDetails navigate={navigate} />;
+      return (
+        <PlanDetails
+          navigate={navigate}
+        />
+      );
 
     case "exercise-library":
-      return <ExerciseLibrary navigate={navigate} />;
+      return (
+        <ExerciseLibrary
+          navigate={navigate}
+        />
+      );
 
     case "exercise-details":
-      return <ExerciseDetails navigate={navigate} />;
+      return (
+        <ExerciseDetails
+          navigate={navigate}
+        />
+      );
 
     case "workout-tracking":
-      return <WorkoutTracking navigate={navigate} />;
+      return (
+        <WorkoutTracking
+          navigate={navigate}
+        />
+      );
 
     case "analytics":
-      return <Analytics navigate={navigate} />;
+      return (
+        <Analytics
+          navigate={navigate}
+        />
+      );
 
     case "goals":
-      return <Goals navigate={navigate} />;
+      return (
+        <Goals
+          navigate={navigate}
+        />
+      );
 
     case "calories":
-      return <Calories navigate={navigate} />;
+      return (
+        <Calories
+          navigate={navigate}
+        />
+      );
 
     case "workout-history":
-      return <WorkoutHistory navigate={navigate} />;
+      return (
+        <WorkoutHistory
+          navigate={navigate}
+        />
+      );
 
     case "pricing":
-      return <Pricing navigate={navigate} />;
+      return (
+        <Pricing
+          navigate={navigate}
+        />
+      );
 
     case "notifications":
-      return <Notifications navigate={navigate} />;
+      return (
+        <Notifications
+          navigate={navigate}
+        />
+      );
 
     case "profile":
-      return <Profile navigate={navigate} />;
+      return (
+        <Profile
+          navigate={navigate}
+        />
+      );
 
     case "settings":
-      return <Settings navigate={navigate} />;
+      return (
+        <Settings
+          navigate={navigate}
+        />
+      );
 
     case "support":
-      return <Support navigate={navigate} />;
+      return (
+        <Support
+          navigate={navigate}
+        />
+      );
 
     default:
-      return <Landing navigate={navigate} />;
+      return (
+        <Landing
+          navigate={navigate}
+        />
+      );
   }
 }
 

@@ -228,8 +228,7 @@ function Community({ navigate }) {
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to update like."
+          data.message || "Failed to update like."
         );
       }
 
@@ -251,8 +250,7 @@ function Community({ navigate }) {
       console.error("LIKE POST ERROR:", err);
 
       setError(
-        err.message ||
-          "Failed to update like."
+        err.message || "Failed to update like."
       );
     } finally {
       setLikingPostId(null);
@@ -295,8 +293,7 @@ function Community({ navigate }) {
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to load comments."
+          data.message || "Failed to load comments."
         );
       }
 
@@ -311,14 +308,10 @@ function Community({ navigate }) {
         [postId]: loadedComments,
       }));
     } catch (err) {
-      console.error(
-        "LOAD COMMENTS ERROR:",
-        err
-      );
+      console.error("LOAD COMMENTS ERROR:", err);
 
       setError(
-        err.message ||
-          "Failed to load comments."
+        err.message || "Failed to load comments."
       );
     } finally {
       setLoadingComments((previous) => ({
@@ -393,8 +386,7 @@ function Community({ navigate }) {
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to add comment."
+          data.message || "Failed to add comment."
         );
       }
 
@@ -427,14 +419,10 @@ function Community({ navigate }) {
         [postId]: "",
       }));
     } catch (err) {
-      console.error(
-        "ADD COMMENT ERROR:",
-        err
-      );
+      console.error("ADD COMMENT ERROR:", err);
 
       setError(
-        err.message ||
-          "Failed to add comment."
+        err.message || "Failed to add comment."
       );
     } finally {
       setCommentingPostId(null);
@@ -533,29 +521,41 @@ function Community({ navigate }) {
           NAVBAR
       ================================= */}
 
-      <nav className="community-nav">
-        <div className="community-logo">
-          FITPULSE
-        </div>
+      <header className="landing-navbar">
+        <button
+          type="button"
+          className="landing-brand"
+          onClick={() => navigate("landing")}
+        >
+          <img
+            src="/images/fitpulse-logo.png"
+            alt="FITPULSE"
+            className="landing-logo-image"
+          />
 
-        <div className="community-nav-links">
+          <span>FITPULSE</span>
+        </button>
+
+        <nav className="landing-navigation">
           <button
-            onClick={() =>
-              navigate("landing")
-            }
+            type="button"
+            className="nav-link"
+            onClick={() => navigate("landing")}
           >
             Overview
           </button>
 
           <button
-            onClick={() =>
-              navigate("features")
-            }
+            type="button"
+            className="nav-link"
+            onClick={() => navigate("features")}
           >
             Features
           </button>
 
           <button
+            type="button"
+            className="nav-link"
             onClick={() =>
               navigate("workout-plans")
             }
@@ -564,36 +564,39 @@ function Community({ navigate }) {
           </button>
 
           <button
-            onClick={() =>
-              navigate("pricing")
-            }
+            type="button"
+            className="nav-link"
+            onClick={() => navigate("pricing")}
           >
             Pricing
           </button>
 
-          <button className="active">
+          <button
+            type="button"
+            className="nav-link active"
+          >
             Community
           </button>
-        </div>
+        </nav>
 
-        <div className="community-nav-actions">
+        <div className="landing-nav-actions">
           <button
-            onClick={() =>
-              navigate("signin")
-            }
+            type="button"
+            className="login-button"
+            onClick={() => navigate("signin")}
           >
             Login
           </button>
 
           <button
-            onClick={() =>
-              navigate("register")
-            }
+            type="button"
+            className="join-button"
+            onClick={() => navigate("register")}
           >
             JOIN FREE
           </button>
         </div>
-      </nav>
+      </header>
 
       {/* ================================
           HERO
@@ -747,9 +750,7 @@ function Community({ navigate }) {
           <textarea
             value={newPost}
             onChange={(event) =>
-              setNewPost(
-                event.target.value
-              )
+              setNewPost(event.target.value)
             }
             maxLength={500}
             placeholder="Share your workout, progress or motivation..."

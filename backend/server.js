@@ -20,16 +20,10 @@ const app = express();
 
 const PORT = Number(process.env.PORT) || 5000;
 
-const isProduction =
-  process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === "production";
 
 /*
   CORS
-  Development:
-  - localhost:5173 allowed
-
-  Production:
-  - Set FRONTEND_URL in .env
 */
 const allowedOrigins = isProduction
   ? [process.env.FRONTEND_URL].filter(Boolean)
@@ -41,22 +35,16 @@ const allowedOrigins = isProduction
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests without an Origin header
-      // such as Postman/server-to-server requests.
       if (!origin) {
         return callback(null, true);
       }
 
-      if (
-        allowedOrigins.includes(origin)
-      ) {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
       return callback(
-        new Error(
-          "CORS origin not allowed."
-        )
+        new Error("CORS origin not allowed.")
       );
     },
   })
@@ -64,10 +52,6 @@ app.use(
 
 /*
   JSON BODY LIMIT
-
-  Prevent unnecessarily large JSON requests.
-  Profile pictures are currently stored as
-  base64 strings, so keep this at 2mb.
 */
 app.use(
   express.json({
@@ -112,46 +96,14 @@ app.get("/", (req, res) => {
 /*
   API ROUTES
 */
-
-app.use(
-  "/api/auth",
-  authRoutes
-);
-
-app.use(
-  "/api/profile",
-  profileRoutes
-);
-
-app.use(
-  "/api/settings",
-  settingsRoutes
-);
-
-app.use(
-  "/api/workouts",
-  workoutRoutes
-);
-
-app.use(
-  "/api/subscription",
-  subscriptionRoutes
-);
-
-app.use(
-  "/api/exercises",
-  exerciseRoutes
-);
-
-app.use(
-  "/api/community",
-  communityRoutes
-);
-
-app.use(
-  "/api/support",
-  supportRoutes
-);
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/workouts", workoutRoutes);
+app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/exercises", exerciseRoutes);
+app.use("/api/community", communityRoutes);
+app.use("/api/support", supportRoutes);
 
 /*
   AUTH CHECK
@@ -162,19 +114,14 @@ app.get(
   async (req, res) => {
     try {
       res.status(200).json({
-        message:
-          "Authenticated user",
+        message: "Authenticated user",
         user: req.user,
       });
     } catch (error) {
-      console.error(
-        "AUTH ME ERROR:",
-        error
-      );
+      console.error("AUTH ME ERROR:", error);
 
       res.status(500).json({
-        message:
-          "Server error.",
+        message: "Server error.",
       });
     }
   }
@@ -183,66 +130,50 @@ app.get(
 /*
   UNKNOWN API ROUTE
 */
-app.use(
-  "/api",
-  (req, res) => {
-    res.status(404).json({
-      message:
-        "API endpoint not found.",
-    });
-  }
-);
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    message: "API endpoint not found.",
+  });
+});
 
 /*
   GLOBAL ERROR HANDLER
 */
-app.use(
-  (error, req, res, next) => {
-    console.error(
-      "GLOBAL SERVER ERROR:",
-      error.message
-    );
+app.use((error, req, res, next) => {
+  console.error(
+    "GLOBAL SERVER ERROR:",
+    error.message
+  );
 
-    // CORS error
-    if (
-      error.message ===
-      "CORS origin not allowed."
-    ) {
-      return res.status(403).json({
-        message:
-          "Request origin is not allowed.",
-      });
-    }
-
-    // JSON body too large
-    if (
-      error.type ===
-      "entity.too.large"
-    ) {
-      return res.status(413).json({
-        message:
-          "Request payload is too large.",
-      });
-    }
-
-    // Invalid JSON
-    if (
-      error instanceof SyntaxError &&
-      error.status === 400 &&
-      error.type === "entity.parse.failed"
-    ) {
-      return res.status(400).json({
-        message:
-          "Invalid JSON request.",
-      });
-    }
-
-    res.status(500).json({
-      message:
-        "Internal server error.",
+  if (
+    error.message ===
+    "CORS origin not allowed."
+  ) {
+    return res.status(403).json({
+      message: "Request origin is not allowed.",
     });
   }
-);
+
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({
+      message: "Request payload is too large.",
+    });
+  }
+
+  if (
+    error instanceof SyntaxError &&
+    error.status === 400 &&
+    error.type === "entity.parse.failed"
+  ) {
+    return res.status(400).json({
+      message: "Invalid JSON request.",
+    });
+  }
+
+  res.status(500).json({
+    message: "Internal server error.",
+  });
+});
 
 /*
   DATABASE CONNECTION
@@ -256,7 +187,7 @@ mongoose
 
     app.listen(PORT, () => {
       console.log(
-        `FITPULSE Backend running on http://localhost:${PORT}`
+        `FITPULSE Backend running on port ${PORT}`
       );
     });
   })
@@ -265,15 +196,15 @@ mongoose
       "MongoDB connection failed ❌"
     );
 
-    if (isProduction) {
-      console.error(
-        "Database connection failed."
-      );
-    } else {
-      console.error(
-        error.message
-      );
-    }
+    console.error(
+      "MongoDB ERROR DETAILS:",
+      error.message
+    );
+
+    console.error(
+      "MongoDB ERROR CODE:",
+      error.code || "N/A"
+    );
 
     process.exit(1);
   });

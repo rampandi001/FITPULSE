@@ -118,18 +118,9 @@ function Community({ navigate }) {
       return;
     }
 
-    const elementTop =
-      element.getBoundingClientRect().top +
-      window.scrollY;
-
-    const navbarOffset = 80;
-
-    window.scrollTo({
-      top: Math.max(
-        0,
-        elementTop - navbarOffset
-      ),
+    element.scrollIntoView({
       behavior: "smooth",
+      block: "start",
     });
   };
 
@@ -209,6 +200,7 @@ function Community({ navigate }) {
   const handleLike = async (postId) => {
     try {
       setLikingPostId(postId);
+      setError("");
 
       const token = getToken();
 
@@ -369,6 +361,7 @@ function Community({ navigate }) {
 
     try {
       setCommentingPostId(postId);
+      setError("");
 
       const token = getToken();
 
@@ -524,7 +517,17 @@ function Community({ navigate }) {
   );
 
   return (
-    <div className="community-page">
+    <div
+      className="community-page"
+      style={{
+        height: "100vh",
+        minHeight: "100vh",
+        overflowY: "auto",
+        overflowX: "hidden",
+        boxSizing: "border-box",
+        scrollBehavior: "smooth",
+      }}
+    >
 
       {/* ================================
           NAVBAR
@@ -699,6 +702,9 @@ function Community({ navigate }) {
       <section
         id="community-feed"
         className="community-feed-section"
+        style={{
+          scrollMarginTop: "90px",
+        }}
       >
 
         <div className="community-section-heading">
@@ -898,6 +904,7 @@ function Community({ navigate }) {
                       style={{
                         width: "42px",
                         height: "42px",
+                        minWidth: "42px",
                         borderRadius:
                           "50%",
                         overflow: "hidden",
@@ -1041,7 +1048,12 @@ function Community({ navigate }) {
                           "center",
                         gap: "7px",
                         cursor:
-                          "pointer",
+                          likingPostId ===
+                          post._id
+                            ? "not-allowed"
+                            : "pointer",
+                        padding: "6px 2px",
+                        fontSize: "14px",
                       }}
                     >
                       <Heart
@@ -1075,6 +1087,8 @@ function Community({ navigate }) {
                         gap: "7px",
                         cursor:
                           "pointer",
+                        padding: "6px 2px",
+                        fontSize: "14px",
                       }}
                     >
                       <MessageCircle
@@ -1123,6 +1137,8 @@ function Community({ navigate }) {
                               "rgba(255,255,255,0.45)",
                             fontSize:
                               "13px",
+                            marginBottom:
+                              "15px",
                           }}
                         >
                           No comments yet.
@@ -1245,6 +1261,8 @@ function Community({ navigate }) {
                                           "rgba(255,255,255,0.7)",
                                         whiteSpace:
                                           "pre-wrap",
+                                        wordBreak:
+                                          "break-word",
                                       }}
                                     >
                                       {
@@ -1317,7 +1335,7 @@ function Community({ navigate }) {
                               post._id
                             )
                           }
-                          maxLength={300}
+                          maxLength={500}
                           placeholder="Write a comment..."
                           style={{
                             flex: 1,
@@ -1333,6 +1351,8 @@ function Community({ navigate }) {
                             color: "#fff",
                             outline:
                               "none",
+                            boxSizing:
+                              "border-box",
                           }}
                         />
 
@@ -1356,6 +1376,8 @@ function Community({ navigate }) {
                             width:
                               "42px",
                             height:
+                              "42px",
+                            minWidth:
                               "42px",
                             borderRadius:
                               "10px",
@@ -1434,6 +1456,13 @@ function Community({ navigate }) {
         </button>
       </section>
 
+      {/* Bottom breathing space */}
+      <div
+        style={{
+          height: "40px",
+          flexShrink: 0,
+        }}
+      />
     </div>
   );
 }

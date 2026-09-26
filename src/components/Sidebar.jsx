@@ -16,6 +16,7 @@ import {
 
 function Sidebar({ navigate, active = "dashboard" }) {
   const [user, setUser] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const loadUser = () => {
     try {
@@ -32,16 +33,73 @@ function Sidebar({ navigate, active = "dashboard" }) {
     }
   };
 
+  const loadUnreadNotifications = async () => {
+    try {
+      const token = localStorage.getItem("fitpulse_token");
+
+      if (!token) {
+        setUnreadCount(0);
+        return;
+      }
+
+      const response = await fetch(
+        "https://fitpulse-feid.onrender.com/api/notifications",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem("fitpulse_token");
+        localStorage.removeItem("fitpulse_user");
+        setUnreadCount(0);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to load notifications."
+        );
+      }
+
+      setUnreadCount(
+        Number(data.unreadCount) || 0
+      );
+    } catch (error) {
+      console.error(
+        "SIDEBAR NOTIFICATION ERROR:",
+        error
+      );
+
+      setUnreadCount(0);
+    }
+  };
+
   useEffect(() => {
     loadUser();
+    loadUnreadNotifications();
 
     const handleUserUpdate = () => {
       loadUser();
+      loadUnreadNotifications();
+    };
+
+    const handleNotificationUpdate = () => {
+      loadUnreadNotifications();
     };
 
     window.addEventListener(
       "fitpulse-user-updated",
       handleUserUpdate
+    );
+
+    window.addEventListener(
+      "fitpulse-notifications-updated",
+      handleNotificationUpdate
     );
 
     window.addEventListener(
@@ -53,6 +111,11 @@ function Sidebar({ navigate, active = "dashboard" }) {
       window.removeEventListener(
         "fitpulse-user-updated",
         handleUserUpdate
+      );
+
+      window.removeEventListener(
+        "fitpulse-notifications-updated",
+        handleNotificationUpdate
       );
 
       window.removeEventListener(
@@ -117,7 +180,7 @@ function Sidebar({ navigate, active = "dashboard" }) {
       label: "Notifications",
       icon: Bell,
       screen: "notifications",
-      notification: 2,
+      notification: unreadCount,
     },
     {
       label: "Support Desk",
@@ -182,7 +245,7 @@ function Sidebar({ navigate, active = "dashboard" }) {
                 {item.label}
               </span>
 
-              {item.notification && (
+              {item.notification > 0 && (
                 <span className="notification-badge">
                   {item.notification}
                 </span>

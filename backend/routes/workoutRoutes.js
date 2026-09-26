@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 const Workout = require("../models/Workout");
+const Notification = require("../models/Notification");
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -21,7 +22,11 @@ const allowedStatuses = [
 ];
 
 const getNumber = (value, fieldName, min, max) => {
-  if (value === undefined || value === null || value === "") {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
     return null;
   }
 
@@ -114,7 +119,8 @@ router.post(
         !allowedTypes.includes(finalType)
       ) {
         return res.status(400).json({
-          message: "Invalid workout type.",
+          message:
+            "Invalid workout type.",
         });
       }
 
@@ -127,7 +133,8 @@ router.post(
         )
       ) {
         return res.status(400).json({
-          message: "Invalid workout status.",
+          message:
+            "Invalid workout status.",
         });
       }
 
@@ -221,7 +228,7 @@ router.post(
 
       if (
         finalCompletedExercises >
-        finalTotalExercises &&
+          finalTotalExercises &&
         finalTotalExercises > 0
       ) {
         return res.status(400).json({
@@ -232,7 +239,7 @@ router.post(
 
       if (
         finalCompletedSets >
-        finalTotalSets &&
+          finalTotalSets &&
         finalTotalSets > 0
       ) {
         return res.status(400).json({
@@ -332,6 +339,36 @@ router.post(
           completedAt:
             finalCompletedAt,
         });
+
+      /*
+        CREATE NOTIFICATION
+        Only completed workouts create
+        a workout notification.
+      */
+      if (finalStatus === "COMPLETED") {
+        try {
+          await Notification.create({
+            user: userId,
+            title: "Workout completed",
+            message: `${
+              workout.title
+            } completed successfully. You burned approximately ${
+              finalCalories
+            } calories.`,
+            type: "WORKOUT",
+            read: false,
+          });
+        } catch (notificationError) {
+          /*
+            Notification failure should not
+            make a successfully saved workout fail.
+          */
+          console.error(
+            "CREATE WORKOUT NOTIFICATION ERROR:",
+            notificationError
+          );
+        }
+      }
 
       res.status(201).json({
         message:
